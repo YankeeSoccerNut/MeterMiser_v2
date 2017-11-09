@@ -69,7 +69,8 @@ $(document).ready(()=>{
 	var yAxis = d3.axisLeft(y).ticks(24);
 
 	// Get the data
-	d3.json('http://ec2-18-221-219-61.us-east-2.compute.amazonaws.com/Readings', function(error,data){
+	// d3.request('/api/readings').get()
+	d3.json('/api/Readings', function(error,data){
 		console.log(data);
 		var dataFormated = formatJSON(data);
 		console.log(dataFormated);
