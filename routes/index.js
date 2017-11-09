@@ -6,4 +6,8 @@ router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
+/* GET history page. */
+router.get('/history', function(req, res, next) {
+  res.render('history');
+});
 module.exports = router;

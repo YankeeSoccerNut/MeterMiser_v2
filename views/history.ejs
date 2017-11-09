@@ -24,10 +24,11 @@
   <div class="container-history">
 
     <div style="margin-top: 20px;" class="text-center">
-
-      <button class="history-buttons" id="oneDay" type="btn-location-buttons">Day</button>
-      <button class="history-buttons" id="oneWeek" type="button">Week</button>
-      <button class="history-buttons" id="oneMonth" type="button">Month</button>
+      <!-- Date range selector....may need to be styled differently -->
+      <div id="reportrange" class="pull-right" style="background: #fff; cursor: pointer; padding: 5px 10px; border: 1px solid #ccc; width: 100%">
+        <i class="glyphicon glyphicon-calendar fa fa-calendar"></i>&nbsp;
+        <span></span> <b class="caret"></b>
+      </div>
 
     </div>
 
@@ -36,6 +37,8 @@
     <div id="graph-container">
 
     </div>
+    <!-- temporary target for table format...will change when add toggle functionality for chart/table view-->
+    <div id="table-container"></div>
   </div><!-- container -->
 
     <!-- JS -->

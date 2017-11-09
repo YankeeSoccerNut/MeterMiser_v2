@@ -1,0 +1,21 @@
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 4px;
+  margin-left: 8px;
+}
+.swatch:first-of-type {
+  margin-left: 0px;
+}
+
+svg{
+	background-color: #fff;
+}
+
+#graph-container{
+	display: inline-block;
+	height: 500px;
+	max-width: 400px;
+	margin: auto;
+}
