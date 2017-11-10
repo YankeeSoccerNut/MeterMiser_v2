@@ -13,15 +13,21 @@ router.get('/', function(req, res, next) {
   res.render('index', {});
 });
 
+<<<<<<< Updated upstream
 /* GET history page. */
 router.get('/history', function(req, res, next) {
   res.render('history');
 });
 
+<<<<<<< Updated upstream
 router.get('/performance', function(req, res, next) {
   res.render('stackable');
 });
 
+=======
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 router.post('/loginProcess',(req,res,next)=>{
 	console.log('im in INDEX')
 })
