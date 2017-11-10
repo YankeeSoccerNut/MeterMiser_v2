@@ -18,7 +18,7 @@
         </div>
 
         <div class="card-box-padfont" style="overflow: hidden; style="margin-left: 20px;">
-          <form class="mm-signin-form">
+          <form action="/users/sign-up-process" method="post" class="mm-signin-form">
 
           <div class="row clearfix">
 
@@ -28,7 +28,7 @@
                   <i class="material-icons">person</i>
                 </span>
                 <div class="form-line">
-                  <input id="first-name-input" type="text" class="form-control date" placeholder="First Name">
+                  <input id="first-name-input" type="text" class="form-control date" placeholder="First Name" name="firstName">
 
                 </div>
 
@@ -46,7 +46,7 @@
                   <i class="material-icons" style="color: transparent;">person</i>
                 </span>
                 <div class="form-line">
-                  <input id="last-name-input" type="text" class="form-control date" placeholder="Last Name">
+                  <input id="last-name-input" type="text" class="form-control date" placeholder="Last Name" name="lastName">
 
                 </div>
 
@@ -64,7 +64,43 @@
                   <i class="material-icons">email</i>
                 </span>
                 <div class="form-line">
-                  <input id="email-input" type="text" class="form-control email" placeholder="Email Address">
+                  <input id="email-input" type="text" class="form-control email" placeholder="Email Address" name="email">
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="row clearfix">
+
+            <div class="col-md-12">
+              <div class="input-group">
+                <span class="input-group-addon">
+                  <i class="material-icons">lock</i>
+                </span>
+                <div class="form-line">
+                  <input id="password-input" type="password" class="form-control password" placeholder="Password" name="password">
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="row clearfix">
+
+            <div class="col-md-12">
+              <div class="input-group">
+                <span class="input-group-addon">
+                  <i class="material-icons">lock</i>
+                </span>
+                <div class="form-line">
+                  <input id="password-confirmation" type="password" class="form-control password" placeholder="Confirm Password" name="passwordConfirmed">
 
                 </div>
 
@@ -82,7 +118,7 @@
                   <i class="material-icons">phone</i>
                 </span>
                 <div class="form-line">
-                  <input id="phone-phone-input" type="text" class="form-control mobile-phone-number" placeholder="Phone Number">
+                  <input id="phone-phone-input" type="text" class="form-control mobile-phone-number" placeholder="Phone Number" name="phone">
 
                 </div>
 
@@ -100,7 +136,7 @@
                   <i class="material-icons dp48">phonelink_ring</i>
                 </span>
                 <div class="form-line">
-                  <input id="text-phone-input" type="text" class="form-control mobile-phone-number" placeholder="Text Number">
+                  <input id="text-phone-input" type="text" class="form-control mobile-phone-number" placeholder="Text Number" name="sms">
 
                 </div>
 
@@ -110,7 +146,7 @@
 
           </div>
           <div class="col-md-12 text-center">
-            <button type="submit" class="btn btn-signin-submit-signIn btn-lg" style="width: 100%;">Sign Up</button>
+            <button type="submit" class="btn btn-signin-submit btn-lg" style="width: 100%;">Sign Up</button>
           </div>
 
         </form>
