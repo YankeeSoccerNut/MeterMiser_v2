@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 var request = require('request');
 var config = require('../config');
-
+var secure_pass = require('../utility/securepass');
 
 function hasQueryString(req) {
 
@@ -12,17 +12,17 @@ function hasQueryString(req) {
   return true;
 };
 
-// From stackoverflow response on securing routes...
-function secure_pass(req, res, next) {
-    console.log ("in secure_pass...");
-    req.session.loggedIn = true;
-    console.log(req.session.loggedIn);
-    if (req.session.loggedIn){
-        next();
-    } else {
-       res.send("Unauthorized");
-    };
-};
+// // From stackoverflow response on securing routes...
+// function secure_pass(req, res, next) {
+//     console.log ("in secure_pass...");
+//     req.session.loggedIn = true;
+//     console.log(req.session.loggedIn);
+//     if (req.session.loggedIn){
+//         next();
+//     } else {
+//        res.send("Unauthorized");
+//     };
+// };
 
 
 // This route is only for API requests...

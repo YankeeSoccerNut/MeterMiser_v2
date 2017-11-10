@@ -8,13 +8,15 @@
 // 5.  insert an entry in the activity log to record the polling activity.
 
 var mysql = require('mysql');
+var moment = require ('moment');
+var config = require('../config');
 
 // Get user id and password.....// TODO: encrypt/decrypt for security
 var fsIdPass = require('fs');
 var idPassRecord = '';
 
 // Use synchronous read as we really can't do anything else until we have the userId and password....
-idPassRecord = fsIdPass.readFileSync('~/myThermostats.txt', 'utf8');
+idPassRecord = fsIdPass.readFileSync('../myThermostats.txt', 'utf8');
 
 var userIdPass = idPassRecord.split("|");
 var trimmedUserPass = userIdPass[1].trim();
@@ -159,12 +161,7 @@ function saveReadings(userLocationData) {
       var weatherCondition = '';
 
       // open up the database connection...
-      var dbConnection = mysql.createConnection({
-        host     : 'localhost',
-        user     : 'root',
-        password : 'root',
-        database : 'meterMiser'
-      });
+      var dbConnection = mysql.createConnection(config.db);
       dbConnection.connect();
 
       // Loop through locations...use shortcuts to JSON object we parsed earlier.
@@ -229,6 +226,19 @@ function saveReadings(userLocationData) {
 
         // for Readings table...
         thermCreated = theThermostatReadingsData.Created;
+
+        // Check to see if the user has set up locationHours, if not then we can create an Activity to remind the user to set them.
+
+        // need to check locationHours to see if the location is open or closed and then set our boolean accordingly
+        var dayOfWeek = moment(thermCreated,'e');
+        var hour = moment(thermCreated, 'HH');
+
+        console.log("=============MOMENT==============");
+        console.log(`${dayOfWeek} ${hour}`);
+
+        // var checkLocationHoursSQL = `SELECT * from LocationHours WHERE locationId = ${locationId} AND
+        // `;
+
 
         if (theThermostatReadingsData.ThermostatLocked == 'true'){
           thermLocked = true;
@@ -339,10 +349,26 @@ function saveReadings(userLocationData) {
 
 
   });  // end parseString
+};  // end saveReadings
 
-
-}  // end saveReadings
-
+// function parseMilitaryTime(dateTime) {
+//   // return a string that represent the time portion of a datetime in military time...eg. '0900' or '1600'.
+//     if (dateTime == '') return null;
+//
+//     var time = timeString.match(/(\d+)(:(\d\d))?\s*(p?)/i);
+//     if (time == null) return null;
+//
+//     var hours = parseInt(time[1],10);
+//     if (hours == 12 && !time[4]) {
+//           hours = 0;
+//     }
+//     else {
+//         hours += (hours < 12 && time[4])? 12 : 0;
+//     };
+//     minutes = parseInt(time[3],10) || 0);
+//
+//     return `${hours}${minutes}`;
+// };
 //
 // connection.connect();
 //
