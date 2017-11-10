@@ -24,6 +24,7 @@ body{
 .card-box .card-box-padfont{
   font-size: 14px;
   padding: 0px 30px 20px 30px;
+  margin-top: 30px;
 }
 
 @media only screen and (min-width: 600px) {
@@ -241,4 +242,36 @@ body{
 .logo-cent-10{
   margin-left: 10px;
   padding-top: 10px;
+}
+
+/*sign up don't remember password area*/
+
+.dont-have-account{
+  border-top: 1px solid #e6ecf0;
+}
+
+.signupLink {
+    color: #1da1f2;
+}
+
+.signupLink a {
+    color: #1c94e0;
+    text-decoration: none;
+}
+.signupLink a {
+    background: transparent;
+}
+
+.linkpad{
+  margin-top: 20px;
+  padding-bottom: 20px;
+}
+
+.LoginForm-rememberForgot{
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.separator{
+  color: #657786;
 }
