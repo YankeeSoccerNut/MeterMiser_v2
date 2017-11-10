@@ -179,7 +179,10 @@ $(document).ready(()=>{
 	            	}else{
 	            		icons = ''
 	            			if(d.triggers.connection != ''){
-	            				icons += `<i class = 'material-icons'>Network Check</i>`
+	            				icons += `<i class="material-icons">location_off</i>`
+	            			}
+	            			if(d.triggers.permHold){
+	            				icons += `<i class="material-icons">priority_high</i>`
 	            			}
 
 	            		return {column: column, value: icons};
@@ -208,44 +211,60 @@ $(document).ready(()=>{
 			dataFormated[i].status = determineStatus(d.statusHeat, d.systemSwitchPos);
 			dataFormated[i].thermCreated = d.thermCreated;
 			dataFormated[i].triggers = new triggersList();
-			console.log(dataFormated[i].triggers)
+			if(dataFormated[i].status == 'Hold - Permanent'){
+				dataFormated[i].triggers.permHold = true;
+			}
+			// console.log(dataFormated[i].triggers)
 			if(i>2){
-				// make sure locations match
-				// var prevIndex = previousReading(i,1);
-				var prevIndex = i-3;
-				// eliminate time gaps
-				console.log(prevIndex)
-				dataFormated[prevIndex].endTimeInfo = new DateTime(d.created);
-				if(i>=rawData.length - 3){
-					dataFormated[i].endTimeInfo =new DateTime(Date.now());
-				}
-
-				//lost connection
-				if(i>11){
-					// var strikeIndex = previousReading(i,4);
-					var strikeIndex = i-12;
-					console.log(strikeIndex)
-					if(dataFormated[i].thermCreated == dataFormated[strikeIndex].thermCreated){
-						dataFormated[i].triggers.connection = 'Lost Connection'
+			// 	// make sure locations match
+			// 	// var prevIndex = previousReading(i,1);
+			// 	var prevIndex = i-3;
+			// 	var prevIndex = _.findLastKey(dataFormated,function(o){
+			// 			return o.location == dataFormated[i].location
+			// 		}, i-1);
+			// 	// eliminate time gaps
+				
+				
+				
+					dataFormated[i-3].endTimeInfo = new DateTime(d.created);
+					if(i>=rawData.length - 3){
+						dataFormated[i].endTimeInfo =new DateTime(Date.now());
 					}
+
 				}
-			}
-			function previousReading(index,numPrior){
-				var mostLikely = index-(3*numPrior);
-				console.log(mostLikely)
-				if(dataFormated[index].location == dataFormated[mostLikely].location){
-					return mostLikely;
-				}else if(dataFormated[index].location == dataFormated[mostLikely + 1].location){
-					return mostLikely + 1;
-				}else if(dataFormated[index].location == dataFormated[mostLikely + 2].location){
-					return mostLikely + 2;
-				}else{
-					var bySearch = _.findLastIndex(dataFormated,function(o){
-							return o.location == dataFormated[index].location
-						}, mostLikely)
-					return bySearch
-				}
-			}
+				
+
+
+			// 	//lost connection
+			// 	// if(i>11){
+			// 	// 	// var strikeIndex = previousReading(i,4);
+			// 	// 	// var strikeIndex = i-12;
+			// 	// 	console.log(strikeIndex)
+			// 	// 	if(dataFormated[i].thermCreated == dataFormated[strikeIndex].thermCreated){
+			// 	// 		dataFormated[i].triggers.connection = 'Lost Connection'
+			// 	// 	}
+			// 	// }
+			// }
+
+			// function previousReading(index,numPrior){
+			// 	_.findLastIndex(dataFormated,function(o){
+			// 				return o.location == dataFormated[index].location
+			// 			}, index-1)
+			// 	// var mostLikely = index-(3*numPrior);
+			// 	// console.log(mostLikely)
+			// 	// if(dataFormated[index].location == dataFormated[mostLikely].location){
+			// 	// 	return mostLikely;
+			// 	// }else if(dataFormated[index].location == dataFormated[mostLikely + 1].location){
+			// 	// 	return mostLikely + 1;
+			// 	// }else if(dataFormated[index].location == dataFormated[mostLikely + 2].location){
+			// 	// 	return mostLikely + 2;
+			// 	// }else{
+			// 	// 	var bySearch = _.findLastIndex(dataFormated,function(o){
+			// 	// 			return o.location == dataFormated[index].location
+			// 	// 		}, mostLikely)
+			// 	// 	return bySearch
+			// 	// }
+			// }
 			
 		})
 		return dataFormated;
@@ -297,12 +316,6 @@ $(document).ready(()=>{
         }
 	}
 
-	function nestedLocation(dataFormated){
-		d3.nest()
-			.key(function(d) {return d.location}).sortKeys(d3.ascending)
-			.key(function(d) {return d.dateTime}).sortKeys(d3.ascending)
-			.entries(dataFormated);
-	}
 
 	function DateTime(dateString){
 		this.timeStamp = Date.parse(dateString);
@@ -317,9 +330,9 @@ $(document).ready(()=>{
 
 	function triggersList(){
 		this.connection = '';
-		this.permHold = '';
+		this.permHold = false;
 		//this.permHold = {open:'',closed"''}
-		this.tempHold = '';
+		this.tempHold = false;
 
 	}
 

@@ -18,6 +18,10 @@ router.get('/history', function(req, res, next) {
   res.render('history');
 });
 
+router.get('/performance', function(req, res, next) {
+  res.render('stackable');
+});
+
 router.post('/loginProcess',(req,res,next)=>{
 	console.log('im in INDEX')
 })
