@@ -30,6 +30,19 @@ router.get('/', function(req, res, next) {
   res.send("Invalid Request");
 });
 
+//Handle inbound SMS response from user via Twilio....
+router.post('/twilioInbound', function(req, res, next) {
+  const MessagingResponse = require('twilio').twiml.MessagingResponse;
+
+  const response = new MessagingResponse();
+  const message = response.message();
+  message.body('meterMiser Received and Acknowledged');
+  response.redirect('https://demo.twilio.com/sms/welcome');
+
+  console.log(response.toString());
+  res.send(response.toString());
+});
+
 router.get('/Users', secure_pass, function(req, res, next) {
 
   var mysql = require('mysql');
