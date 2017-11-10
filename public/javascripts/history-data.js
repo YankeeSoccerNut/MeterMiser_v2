@@ -1,7 +1,6 @@
 $(document).ready(()=>{
 	var start
 	var end
-	var range 
    $(function() {
 
         start = moment().subtract(29, 'days');
@@ -11,11 +10,7 @@ $(document).ready(()=>{
 
         function cb(start, end) {
             $('#reportrange span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
-            range = {
-            	start: start,
-            	end: end
-            }
-            return range;
+            
         }
 
         $('#reportrange').daterangepicker({
@@ -32,17 +27,14 @@ $(document).ready(()=>{
         }, cb);
         $('#reportrange').on('apply.daterangepicker',(ev, picker)=>{
         	updateData(picker.startDate,picker.endDate);
-        	range = {
-            	start: start,
-            	end: end
-            }
-            return range;
+        	
         });
 
         cb(start, end);
         
     })
-   console.log(range)
+  
+
 	// Set the dimensions of the canvas / graph
 	var margin = {top: 10, right: 20, bottom: 40, left: 30};
 	var width = 350 - margin.left - margin.right;
@@ -56,9 +48,6 @@ $(document).ready(()=>{
 	        .attr("transform",
 	              "translate(" + margin.left + "," + margin.top + ")");
 
-	//Add the data tablev
-	// var fields = '<th>Time</th><th>Location</th><th>Status</th>'
-	// d3.select('#graph-container').append("table").append('thead').append("tr")
 	
 	// Set the ranges
 	var x = d3.scaleTime().range([0, width]);
@@ -69,15 +58,16 @@ $(document).ready(()=>{
 	var yAxis = d3.axisLeft(y).ticks(24);
 
 	// Get the data
-	// d3.request('/api/readings').get()
 	d3.json('/api/Readings', function(error,data){
 		console.log(data);
 		var dataFormated = formatJSON(data);
 		console.log(dataFormated);
-		var dataByLocation = nestedLocation(dataFormated);
-		// var dataForTable = filteredData(dataFormated)
-		// console.log(dataForTable)
 
+		var dataInRange = data.filter(function(d){
+			return Date.parse(d.created) > Date.parse(start) && Date.parse(d.created) < Date.parse(end)
+		})
+		var dataForTable = formatJSON(dataInRange)
+		console.log(dataForTable)
 
 	// Timeframe Scales
 	var mostRecent = d3.max(dataFormated, function(d){return d.dateTimeInfo.timeStamp});
@@ -93,12 +83,6 @@ $(document).ready(()=>{
 	x.clamp('true');
 	y.domain(['East Cobb', 'West Cobb', 'Roswell']);
 
-	// // Add StoreHours
-	// var startYear =
-	// var startMonth = 
-	// var startDay = timeframeStart.get(Day);
-
-
     // Add the rects.
     svg.selectAll(".rect")
 		.data(dataFormated)
@@ -106,7 +90,7 @@ $(document).ready(()=>{
 		.attr("class", "rect")
 		.attr("x", function(d) {return x(d.dateTimeInfo.dateComplete); })
 		.attr("y", function(d) {return y(d.location); })
-		.attr("width", function(d) {return x(new Date(d.dateTimeInfo.timeStamp + oneHour)) - x(d.dateTimeInfo.dateComplete); })
+		.attr("width", function(d) {return x(d.endTimeInfo.dateComplete) - x(d.dateTimeInfo.dateComplete); })
 		.attr("height", y.bandwidth())
 		// .style("opacity", )
 		.style("fill", function(d) {return colorPicker(d.status)})
@@ -126,7 +110,6 @@ $(document).ready(()=>{
 
 
     // Add the Y Axis
-
 	svg.append("g")
 	    .attr("class", "y axis")
 	    .call(yAxis)
@@ -140,12 +123,12 @@ $(document).ready(()=>{
                 });
 
 
-
-    var peopleTable = tabulate(dataFormated, ["date", "location", "status"]);
+    //render the table
+    var dataTable = tabulate(dataForTable, ["Date", "Location", "Status","Indications"]);
+    $('#history-table').dataTable();
 	});
 
-	$('#history-table').dataTable();
-
+	
 	// create the legend
 	var legKeys = ['Scheduled', 'Hold - Temporary', 'Hold - Permanent'];
 	var colorArray = ['#27AE60','#F1C40F','#E74C3C'];
@@ -154,10 +137,7 @@ $(document).ready(()=>{
     $('#legend').append('<div class="swatch" style="background:' + colorArray[i] + '"></div>' + legKey);
  	 });
 
-	// Add Event Listeners
-	$('#oneDay').click(()=>{updateData('oneDay')});
-	$('#oneWeek').click(()=>{updateData('oneWeek')});
-	$('#oneMonth').click(()=>{updateData('oneMonth')});
+	
 
 	// The table generation function
 	function tabulate(data, columns) {
@@ -190,10 +170,19 @@ $(document).ready(()=>{
 	    var cells = rows.selectAll("td")
 	        .data(function(d) {
 	            return columns.map(function(column) {
-	            	if(column == "date"){
+	            	if(column == "Date"){
 	            		return {column: column, value: d.dateTimeInfo.dateComplete}
+	            	}else if(column == "Location"){
+	            		return {column: column, value: d.location}
+	            	}else if(column == "Status"){
+	            		return {column: column, value: d.status};
 	            	}else{
-	            		return {column: column, value: d[column]};
+	            		icons = ''
+	            			if(d.triggers.connection != ''){
+	            				icons += `<i class = 'material-icons'>Network Check</i>`
+	            			}
+
+	            		return {column: column, value: icons};
 	            	}
 	            });
 	        })
@@ -205,9 +194,8 @@ $(document).ready(()=>{
 	    return table;
 	}
 
+	f
 
-
-	// render the table
 	 
 
 
@@ -218,34 +206,51 @@ $(document).ready(()=>{
 			dataFormated[i].location = LocationName(d.thermostatId);
 			dataFormated[i].dateTimeInfo = new DateTime(d.created);
 			dataFormated[i].status = determineStatus(d.statusHeat, d.systemSwitchPos);
+			dataFormated[i].thermCreated = d.thermCreated;
+			dataFormated[i].triggers = new triggersList();
+			console.log(dataFormated[i].triggers)
 			if(i>2){
-				dataFormated[i-3].endTimeInfo =new DateTime(d.created);
+				// make sure locations match
+				// var prevIndex = previousReading(i,1);
+				var prevIndex = i-3;
+				// eliminate time gaps
+				console.log(prevIndex)
+				dataFormated[prevIndex].endTimeInfo = new DateTime(d.created);
 				if(i>=rawData.length - 3){
-					var oneHour = 60*60*1000;
-					var future = dataFormated[i].dateTimeInfo.timeStamp + oneHour;
-					console.log(future)
-					dataFormated[i].endTimeInfo =new DateTime(future);
+					dataFormated[i].endTimeInfo =new DateTime(Date.now());
+				}
+
+				//lost connection
+				if(i>11){
+					// var strikeIndex = previousReading(i,4);
+					var strikeIndex = i-12;
+					console.log(strikeIndex)
+					if(dataFormated[i].thermCreated == dataFormated[strikeIndex].thermCreated){
+						dataFormated[i].triggers.connection = 'Lost Connection'
+					}
 				}
 			}
+			function previousReading(index,numPrior){
+				var mostLikely = index-(3*numPrior);
+				console.log(mostLikely)
+				if(dataFormated[index].location == dataFormated[mostLikely].location){
+					return mostLikely;
+				}else if(dataFormated[index].location == dataFormated[mostLikely + 1].location){
+					return mostLikely + 1;
+				}else if(dataFormated[index].location == dataFormated[mostLikely + 2].location){
+					return mostLikely + 2;
+				}else{
+					var bySearch = _.findLastIndex(dataFormated,function(o){
+							return o.location == dataFormated[index].location
+						}, mostLikely)
+					return bySearch
+				}
+			}
+			
 		})
 		return dataFormated;
 	}
 
-	// function filteredData(dataFormated){
-	// 	var filteredData = [];
-	// 	for(let i = 0; i<dataFormated.length; i++){
-	// 		if(dataFormated[i].dateTimeInfo.timeStamp > Date.parse(range.start) && dataFormated[i].dateTimeInfo.timeStamp < Date.parse(range.end)){
-	// 			filteredData.push(dataFormated[i])
-	// 		}
-	// 	}
-	// 	return filteredData;
-	// }
-
-	// function filteredData(d){
-	// 	if(d.dateTimeInfo.timeStamp > Date.parse(range.start) && d.dateTimeInfo.timeStamp < Date.parse(range.end)){
-	// 		return d
-	// 	}
-	// }
 
 
 	function LocationName(thermostatId){
@@ -310,72 +315,83 @@ $(document).ready(()=>{
 		this.minute = this.dateComplete.getUTCMinutes();
 	}
 
+	function triggersList(){
+		this.connection = '';
+		this.permHold = '';
+		//this.permHold = {open:'',closed"''}
+		this.tempHold = '';
+
+	}
+
 	function updateData(start,end){
-	
-		// console.log(timeframe);
+		d3.select("#table-container").select("#history-table_wrapper").remove();
 		// Get the data again
-		d3.json('http://ec2-18-221-219-61.us-east-2.compute.amazonaws.com/Readings', function(error,data){
+		d3.json('/api/Readings', function(error,data){
 			console.log(data);
 			var dataFormated = formatJSON(data);
 			console.log(dataFormated);
-			// var dataForTable = filteredData(dataFormated)
-			// console.log(dataForTable)
 
-		// Timeframe Scales
-		var halfHour = 30*60*1000;
-		var oneHour = 60*60*1000;
-		// console.log(mostRecent);
+			var dataInRange = data.filter(function(d){
+				return Date.parse(d.created) > Date.parse(start) && Date.parse(d.created) < Date.parse(end)
+			})
+			var dataForTable = formatJSON(dataInRange)
+			console.log(dataForTable)
 
-		// Reset Domains
-		x.domain([start, end]);
-		// console.log(new Date(mostRecent-timeframe));
-		y.domain(['East Cobb', 'West Cobb', 'Roswell']);
+			// Reset Domains
+			x.domain([start, end]);
+			// console.log(new Date(mostRecent-timeframe));
+			y.domain(['East Cobb', 'West Cobb', 'Roswell']);
 
-		 // Select the section we want to apply our changes to
-	    var svg = d3.select("#graph-container");
+			 // Select the section we want to apply our changes to
+		    var svg = d3.select("#graph-container");
 
-	    // Data join
-	    var rects = svg.selectAll('.rect')
-	    	.data(dataFormated);
+		    // Data join
+		    var rects = svg.selectAll('.rect')
+		    	.data(dataFormated);
 
-	    // Make the changes
-	    //remove unneeded rects
-	    rects.exit().remove();
-	    //add any new rects
-	    rects.enter().append('rect')
-	    	.attr("class", "rect")
-	    	.style("fill", function(d) {return colorPicker(d.status)})
-		//update all rects to new position
-		rects.transition()
-			.duration(750)
-			.attr("x", function(d) {return x(d.dateTimeInfo.dateComplete); })
-			.attr("y", function(d) {return y(d.location); })
-			.attr("width", function(d) {return x(d.endTimeInfo.dateComplete) - x(d.dateTimeInfo.dateComplete); })
-			.attr("height", y.bandwidth())
-			// .style("opacity", )
+		    // Make the changes
+		    //remove unneeded rects
+		    rects.exit().remove();
+		    //add any new rects
+		    rects.enter().append('rect')
+		    	.attr("class", "rect")
+		    	.style("fill", function(d) {return colorPicker(d.status)})
+			//update all rects to new position
+			rects.transition()
+				.duration(750)
+				.attr("x", function(d) {return x(d.dateTimeInfo.dateComplete); })
+				.attr("y", function(d) {return y(d.location); })
+				.attr("width", function(d) {return x(d.endTimeInfo.dateComplete) - x(d.dateTimeInfo.dateComplete); })
+				.attr("height", y.bandwidth())
+				// .style("opacity", )
 
 
-	    svg.select(".x.axis").transition()
-	    	.duration(750) // change the x axis
-	        .call(xAxis)
-	         .selectAll("text")	
-            .style("text-anchor", "end")
-            .attr("dx", "-.8em")
-            .attr("dy", ".15em")
-            .attr("transform", function(d) {
-                return "rotate(-60)" 
-                });
-	    svg.select(".y.axis").transition() // change the y axis
-	        .duration(750)
-	        .call(yAxis)
-	        .selectAll("text")	
-            .style("text-anchor", "middle")
-            .attr("y", -10)
-            .attr("dx", "5px")
-            .attr("dy", "1px")
-            .attr("transform", function(d) {
-                return "rotate(-90)" 
-                });
+		    svg.select(".x.axis").transition()
+		    	.duration(750) // change the x axis
+		        .call(xAxis)
+		         .selectAll("text")	
+	            .style("text-anchor", "end")
+	            .attr("dx", "-.8em")
+	            .attr("dy", ".15em")
+	            .attr("transform", function(d) {
+	                return "rotate(-60)" 
+	                });
+		    svg.select(".y.axis").transition() // change the y axis
+		        .duration(750)
+		        .call(yAxis)
+		        .selectAll("text")	
+	            .style("text-anchor", "middle")
+	            .attr("y", -10)
+	            .attr("dx", "5px")
+	            .attr("dy", "1px")
+	            .attr("transform", function(d) {
+	                return "rotate(-90)" 
+	                });
+
+             //render the table
+
+		    var dataTable = tabulate(dataForTable, ["Date", "Location", "Status"]);
+		    $('#history-table').dataTable();
 
 	    });
 	};
