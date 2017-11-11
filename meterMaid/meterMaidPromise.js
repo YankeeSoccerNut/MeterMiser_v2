@@ -11,6 +11,7 @@ var mysql = require('mysql');
 var moment = require ('moment');
 var config = require('../config');
 var createActivity = require('../utility/createActivity');
+var dbPromises = [];
 
 // Get user id and password.....// TODO: encrypt/decrypt for security
 var fsIdPass = require('fs');
@@ -98,6 +99,17 @@ console.log(sessionID);
   });  // curl for Logoff
 }); // curl for sessionID
 
+Promise.all(dbPromises).then(()=>{
+  console.log("++++++++++dbPromises++++++++++++");
+  console.log(dbPromises);  // will be array of resolves
+  // Close the database connection...
+  dbConnection.end();
+}).catch(()=>{
+  console.log("caught something via catch Promise.all");
+  console.log("-----------dbPromises------------");
+  console.log(dbPromises);
+}); // Promise.all
+
 function saveReadings(userLocationData) {
   var theLocationsData;
   var theThermostatsData;
@@ -111,7 +123,7 @@ function saveReadings(userLocationData) {
   parseString(userLocationData, function (error, result) {
       if (error !== null) {    // TODO: beef up error checking...
         console.log(error);
-      };
+      }
 
       // Loop through the Locations
       // Get info for location, thermostats, and current readings and put them in our databas
@@ -193,14 +205,14 @@ function saveReadings(userLocationData) {
         }
         else {
           canControlSchedule = false;
-        };
+        }
 
         if (theThermostatsData.WillSupportSchedule == 'true'){
           willSupportSchedule = true;
         }
         else {
           willSupportSchedule = false;
-        };
+        }
 
 
         if (theThermostatsData.Fan[0].CanControl == 'true'){
@@ -208,21 +220,21 @@ function saveReadings(userLocationData) {
         }
         else{
           fanCanControl = false;
-        };
+        }
 
         if (theThermostatsData.Fan[0].CanSetAuto == 'true'){
           fanCanSetAuto = true;
         }
         else{
           fanCanSetAuto = false;
-        };
+        }
 
         if (theThermostatsData.Fan[0].CanSetOn == 'true'){
           fanCanSetOn = true;
         }
         else{
           fanCanSetOn = false;
-        };
+        }
 
         // for Readings table...
         thermCreated = theThermostatReadingsData.Created;
@@ -230,27 +242,23 @@ function saveReadings(userLocationData) {
         // Check to see if the user has set up locationHours, if not then we can create an Activity to remind the user to set them.
         var checkLocationHoursSQL = `SELECT * from LocationHours WHERE locationId = ${locationId};`;
         var userLocationExist = false;
-        console.log(checkLocationHoursSQL);
 
         dbConnection.query(checkLocationHoursSQL, function (err, results) {
           if (err){
-            console.log(err);
+            throw err;
           } else {
-            console.log("No error in checkLocations");
-            console.log(results);
             if(results.length == 0){
             console.log("didn't find locations...");
             // user didn't set up locationHours.  Create activity to remind the user later.
-            activityObj.triggerId = 1; // NoLocationHours
-            activityObj.message = 'From meterMaid:  No locationHours';
+              activityObj.triggerId = 1; // NoLocationHours
+              activityObj.message = 'From meterMaid:  No locationHours';
 
-            createActivity(dbConnection, activityObj);
+              dbPromises.push(createActivity(dbConnection, activityObj));  // bc function returns a promise
             } else {
-              console.log("Found locations...")
               userLocationExist = true;
             };
           };
-        });  // checkLocationHours
+        });
 
         // need to check locationHours to see if the location is open or closed and then set our boolean accordingly
 
@@ -324,33 +332,35 @@ function saveReadings(userLocationData) {
         // console.log(insertThermostatSQL);
         // console.log(insertReadingsSQL);
 
-        // dbConnection.query(insertLocationSQL, function (err, result) {
+        // dbPromises.push(dbConnection.query(insertLocationSQL, function (err, result) {
         //   if (err){
         //     throw err;
         //   } else {
         //   console.log("Location record inserted");
+        //   resolve():
         //   }
         // }));
         //
-        // dbConnection.query(insertThermostatSQL, function (err, result) {
+        // dbPromises.push(dbConnection.query(insertThermostatSQL, function (err, result) {
         //   if (err){
         //     throw err;
         //   } else {
         //     console.log("Thermostat record inserted");
-        //   };
-        // });
+        //     resolve();
+        //   }
+        // }));
 
-        dbConnection.query(insertReadingsSQL, function (err, result) {
-          if (err){
-            throw(err);
-          } else {
-            console.log("Reading record inserted");
-          };
-        });
+        dbPromises.push(new Promise (function(resolve, reject) {
+          dbConnection.query(insertReadingsSQL, function (err, result) {
+            if (err){
+              reject(err);
+            } else {
+              console.log("Reading record inserted");
+              resolve(result);
+            };
+          })
+        }));
       };  // for loop through Locations
-
-    // Close the database connection...
-    dbConnection.end();
-    
+      // Commit the updated/inserted records...not needed?
   });  // end parseString
 };  // end saveReadings
