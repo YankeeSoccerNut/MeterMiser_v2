@@ -5,13 +5,16 @@ function createActivity(dbConnection, activityObj){
 
   var insertSQL = `INSERT INTO ActivityLog (status, triggerId, message) VALUES (0, ${activityObj.triggerId}, '${activityObj.message}');`;
 
-  dbConnection.query(insertSQL, function (err, result) {
-    if (err){
-      throw(err);
-    } else {
-    console.log("ActivityLog record inserted");
-    };
-  });
+  return(new Promise(function(resolve, reject) {
+    dbConnection.query(insertSQL, function (err, result) {
+      if (err){
+        reject(err);
+      } else {
+      console.log("ActivityLog record inserted");
+      resolve(result);
+      };
+    });
+  }));
 };
 
 module.exports = createActivity;

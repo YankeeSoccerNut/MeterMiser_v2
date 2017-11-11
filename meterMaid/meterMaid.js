@@ -11,6 +11,7 @@ var mysql = require('mysql');
 var moment = require ('moment');
 var config = require('../config');
 var createActivity = require('../utility/createActivity');
+var dbPromises = [];  // // TODO: PROMISES
 
 // Get user id and password.....// TODO: encrypt/decrypt for security
 var fsIdPass = require('fs');
@@ -229,7 +230,7 @@ function saveReadings(userLocationData) {
 
         // Check to see if the user has set up locationHours, if not then we can create an Activity to remind the user to set them.
         var checkLocationHoursSQL = `SELECT * from LocationHours WHERE locationId = ${locationId};`;
-        var userLocationExist = false;
+        var userLocationHoursExist = false;
         console.log(checkLocationHoursSQL);
 
         dbConnection.query(checkLocationHoursSQL, function (err, results) {
@@ -243,11 +244,10 @@ function saveReadings(userLocationData) {
             // user didn't set up locationHours.  Create activity to remind the user later.
             activityObj.triggerId = 1; // NoLocationHours
             activityObj.message = 'From meterMaid:  No locationHours';
-
-            createActivity(dbConnection, activityObj);
+            dbPromises.push(createActivity(dbConnection, activityObj));  // bc function returns a promise
             } else {
-              console.log("Found locations...")
-              userLocationExist = true;
+              console.log("Found locationHours!")
+              userLocationHoursExist = true;
             };
           };
         });  // checkLocationHours
@@ -339,18 +339,28 @@ function saveReadings(userLocationData) {
         //     console.log("Thermostat record inserted");
         //   };
         // });
-
-        dbConnection.query(insertReadingsSQL, function (err, result) {
-          if (err){
-            throw(err);
-          } else {
-            console.log("Reading record inserted");
-          };
-        });
+        dbPromises.push(new Promise (function(resolve, reject) {
+          dbConnection.query(insertReadingsSQL, function (err, result) {
+            if (err){
+              reject(err);
+            } else {
+              console.log("Reading record inserted");
+              resolve(result);
+            };
+          })
+        }));
       };  // for loop through Locations
 
-    // Close the database connection...
-    dbConnection.end();
-    
+    Promise.all(dbPromises).then(()=>{
+      console.log("++++++++++dbPromises++++++++++++");
+      console.log(dbPromises);  // will be array of resolves
+      // Close the database connection...
+      dbConnection.end();
+    }).catch(()=>{
+      console.log("caught something via catch Promise.all");
+      console.log("-----------dbPromises------------");
+      console.log(dbPromises);
+      dbConnection.end();
+    }); // Promise.all
   });  // end parseString
 };  // end saveReadings
