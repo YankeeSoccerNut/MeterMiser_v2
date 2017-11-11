@@ -88,7 +88,7 @@ console.log(sessionID);
 
   command = curlRequest;
   child = exec(command, function(error, xmlResponse, stderr){
-    console.log ("LogOff...")
+    console.log ("LogOff Honeywell...")
     // console.log('stdout: ' + xmlResponse);
     console.log('stderr: ' + stderr);
 
@@ -114,7 +114,6 @@ function saveReadings(userLocationData) {
         console.log(error);
       };
 
-      // Loop through the Locations
       // Get info for location, thermostats, and current readings and put them in our databas
       // TODO: assumes 1 meter per location for now.
 
@@ -127,6 +126,7 @@ function saveReadings(userLocationData) {
       var state = '';
       var zip5 = 0;
       var zip4 = 0;
+      var userLocationHoursExist = false;
 
       // for Thermostats table...
       var thermostatId = 0;
@@ -164,13 +164,14 @@ function saveReadings(userLocationData) {
       var weatherTemp = 0;
       var weatherTempUnit = '';
       var weatherCondition = '';
+      var operatingHoursFlag = false;
 
       // Loop through locations...use shortcuts to JSON object we parsed earlier.
 
       for (let i = 0; i < result.GetLocationsResult.Locations[0].LocationInfo.length; i++){
         theLocationsData = result.GetLocationsResult.Locations[0].LocationInfo[i];
-        theThermostatsData = result.GetLocationsResult.Locations[0].LocationInfo[i].Thermostats[0].ThermostatInfo[0]
-        theThermostatReadingsData = result.GetLocationsResult.Locations[0].LocationInfo[i].Thermostats[0].ThermostatInfo[0].UI[0]
+        theThermostatsData = result.GetLocationsResult.Locations[0].LocationInfo[i].Thermostats[0].ThermostatInfo[0];
+        theThermostatReadingsData = result.GetLocationsResult.Locations[0].LocationInfo[i].Thermostats[0].ThermostatInfo[0].UI[0];
 
         // for Locations table...
         locationId = theLocationsData.LocationID;
@@ -181,6 +182,9 @@ function saveReadings(userLocationData) {
         state = null;
         zip5 = theLocationsData.ZipCode;
         zip4 = 0;
+
+
+        console.log(`looping locations i: ${i} locationId: ${locationId}`);
 
         // for Thermostats table...
         thermostatId = theThermostatsData.ThermostatID;
@@ -226,33 +230,83 @@ function saveReadings(userLocationData) {
         };
 
         // for Readings table...
+        operatingHoursFlag = false;
         thermCreated = theThermostatReadingsData.Created;
+        var mDate = moment(thermCreated, moment.ISO_8601);
+        var dayOfWeek = mDate.day();
+        var hour = mDate.hour();
+        var minute = mDate.minute();
 
         // Check to see if the user has set up locationHours, if not then we can create an Activity to remind the user to set them.
         var checkLocationHoursSQL = `SELECT * from LocationHours WHERE locationId = ${locationId};`;
-        var userLocationHoursExist = false;
-        console.log(checkLocationHoursSQL);
+        console.log(`checkLocationHoursSQL\n${checkLocationHoursSQL}`);
 
-        dbConnection.query(checkLocationHoursSQL, function (err, results) {
-          if (err){
-            console.log(err);
-          } else {
-            console.log("No error in checkLocations");
-            console.log(results);
-            if(results.length == 0){
-            console.log("didn't find locations...");
-            // user didn't set up locationHours.  Create activity to remind the user later.
-            activityObj.triggerId = 1; // NoLocationHours
-            activityObj.message = 'From meterMaid:  No locationHours';
-            dbPromises.push(createActivity(dbConnection, activityObj));  // bc function returns a promise
+        var checkLocationsPromise = new Promise (function(resolve, reject) {
+
+          dbConnection.query(checkLocationHoursSQL), (function(err, results){
+
+            console.log("first line in checkLocationsSQL block");
+            if (err){
+              console.log(err);
+              reject (err);
             } else {
-              console.log("Found locationHours!")
-              userLocationHoursExist = true;
+              console.log(`No error in checkLocations for ${locationId}`);
+              if(results.length == 0){
+                console.log("didn't find locations...");
+                // user didn't set up locationHours.  Create activity to remind the user later.
+                activityObj.triggerId = 1; // NoLocationHours
+                activityObj.message = 'From meterMaid:  No locationHours';
+                dbPromises.push(createActivity(dbConnection, activityObj));  // bc function returns a promise and our .all is on inserts
+              } else {
+                console.log(`Found locationHours! for ${locationId}`);
+                userLocationHoursExist = true;
+              };
             };
-          };
-        });  // checkLocationHours
+            console.log("before resolve(true) in checkLocationPromise");
+            resolve(true);
+          });  // dbconnection.query
+          console.log("last line of checkLocationHoursPromise");
+          // resolve(true);
+        });  //checkLocationPromise
 
-        // need to check locationHours to see if the location is open or closed and then set our boolean accordingly
+        console.log("Before checkLocationPromise.then...")
+        console.log(checkLocationsPromise);
+
+        checkLocationsPromise.then(()=>{
+          console.log(`checkLocationPromise.then after checkLocationsSQL locationId: ${locationId}`);
+
+          if(userLocationHoursExist){
+            // need to check reading date/time against locationHours to see if the location is open or closed and then set our boolean accordingly
+            // use the moments created earlier....
+            var militaryTime = (hour * 100) + minute;
+
+            var checkOpenSQL = `SELECT * FROM LocationHours WHERE locationId = ${locationId} AND dayOfWeek = ${dayOfWeek} AND ((${militaryTime} >= openHour) AND (${militaryTime} <= closeHour));`;
+            console.log(checkOpenSQL);
+          };
+
+          var checkOpenPromise = new Promise (function(resolve, reject) {
+            console.log(checkOpenSQL);
+            dbConnection.query(checkOpenSQL), function(err, results){
+              if (err){
+                console.log(err);
+                reject (err);
+              } else {
+                console.log(`No error in checkOpen for ${locationId}`);
+                if(results.length == 0){
+                  console.log("no records found...closed!");
+                  resolve(false);
+                } else {
+                  console.log(`found match in locationHours! for ${locationId} OPEN`);
+                  resolve(true);
+                };
+              };
+            };
+          });
+
+          checkOpenPromise.then((isOpen) => {
+            operatingHoursFlag = isOpen;
+          });
+        });
 
         if (theThermostatReadingsData.ThermostatLocked == 'true'){
           thermLocked = true;
@@ -314,15 +368,13 @@ function saveReadings(userLocationData) {
         // TODO: add error handling
         // TODO: can break out into functions for formatting, inserting
 
-        var insertLocationSQL = `INSERT INTO Locations (locationId ,name,addr1,addr2,city,state,zip5,zip4) VALUES ( ${locationId}, "${name}", ${addr1}, ${addr2}, ${city}, ${state}, ${zip5}, ${zip4})`;
+        var insertLocationSQL = `INSERT INTO Locations (locationId ,name,addr1,addr2,city,state,zip5,zip4, locationHoursExistsFlag) VALUES ( ${locationId}, "${name}", ${addr1}, ${addr2}, ${city}, ${state}, ${zip5}, ${zip4}), ${userLocationHoursExist});`;
 
-        var insertThermostatSQL = `INSERT INTO Thermostats (thermostatId,locationId,deviceName,userDefinedName,macId,DomainId,canControlSchedule,willSupportSchedule,fanCanControl,fanCanSetAuto,fanCanSetOn) VALUES (${thermostatId}, ${locationId}, "${deviceName}", "${userDefinedName}", "${macId}", ${DomainId}, ${canControlSchedule}, ${willSupportSchedule}, ${fanCanControl},${fanCanSetAuto}, ${fanCanSetOn})`;
+        var insertThermostatSQL = `INSERT INTO Thermostats (thermostatId,locationId,deviceName,userDefinedName,macId,DomainId,canControlSchedule,willSupportSchedule,fanCanControl,fanCanSetAuto,fanCanSetOn) VALUES (${thermostatId}, ${locationId}, "${deviceName}", "${userDefinedName}", "${macId}", ${DomainId}, ${canControlSchedule}, ${willSupportSchedule}, ${fanCanControl},${fanCanSetAuto}, ${fanCanSetOn});`;
 
-        var insertReadingsSQL = `INSERT INTO Readings (thermostatId,thermCreated,thermLocked,dispTemp,heatSetPoint,coolSetPoint,displayUnits,statusHeat,statusCool,heatLowerSetPt,heatUpperSetPt,coolLowerSetPt,coolUpperSetPt,schedHeatSp,schedCoolSp,systemSwitchPos,equipmentStatus,fanPosition,fanRunning,weatherIsDefined,weatherIsValid,weatherTemp,weatherTempUnit,weatherCondition)  VALUES (${thermostatId}, "${thermCreated}", ${thermLocked}, ${dispTemp}, ${heatSetPoint}, ${coolSetPoint},"${displayUnits}", ${statusHeat}, ${statusCool}, ${heatLowerSetPt}, ${heatUpperSetPt}, ${coolLowerSetPt}, ${coolUpperSetPt}, ${schedHeatSp},${schedCoolSp},${systemSwitchPos}, "${equipmentStatus}", "${fanPosition}", ${fanRunning}, ${weatherIsDefined}, ${weatherIsValid}, ${weatherTemp}, "${weatherTempUnit}", "${weatherCondition}")`;
+        var insertReadingsSQL = `INSERT INTO Readings (thermostatId,thermCreated,thermLocked,dispTemp,heatSetPoint,coolSetPoint,displayUnits,statusHeat,statusCool,heatLowerSetPt,heatUpperSetPt,coolLowerSetPt,coolUpperSetPt,schedHeatSp,schedCoolSp,systemSwitchPos,equipmentStatus,fanPosition,fanRunning,weatherIsDefined,weatherIsValid,weatherTemp,weatherTempUnit,weatherCondition,operatingHoursFlag,thermCreatedDay, thermCreatedHour, thermCreatedMin)  VALUES (${thermostatId}, "${thermCreated}", ${thermLocked}, ${dispTemp}, ${heatSetPoint}, ${coolSetPoint},"${displayUnits}", ${statusHeat}, ${statusCool}, ${heatLowerSetPt}, ${heatUpperSetPt}, ${coolLowerSetPt}, ${coolUpperSetPt}, ${schedHeatSp},${schedCoolSp},${systemSwitchPos}, "${equipmentStatus}", "${fanPosition}", ${fanRunning}, ${weatherIsDefined}, ${weatherIsValid}, ${weatherTemp}, "${weatherTempUnit}", "${weatherCondition}", ${operatingHoursFlag}, ${dayOfWeek}, ${hour}, ${minute});`;
 
-        // console.log(insertLocationSQL);
-        // console.log(insertThermostatSQL);
-        // console.log(insertReadingsSQL);
+        // TODO:  thinking about moving these to an initialize function or route....
 
         // dbConnection.query(insertLocationSQL, function (err, result) {
         //   if (err){
@@ -339,27 +391,28 @@ function saveReadings(userLocationData) {
         //     console.log("Thermostat record inserted");
         //   };
         // });
-        dbPromises.push(new Promise (function(resolve, reject) {
-          dbConnection.query(insertReadingsSQL, function (err, result) {
-            if (err){
-              reject(err);
-            } else {
-              console.log("Reading record inserted");
-              resolve(result);
-            };
-          })
-        }));
+
+          dbPromises.push(new Promise (function(resolve, reject) {
+            dbConnection.query(insertReadingsSQL, function (err, result) {
+              if (err){
+                reject(err);
+              } else {
+                console.log("Reading record inserted");
+                resolve(result);
+              };
+            });
+          }));
       };  // for loop through Locations
 
     Promise.all(dbPromises).then(()=>{
-      console.log("++++++++++dbPromises++++++++++++");
-      console.log(dbPromises);  // will be array of resolves
+      // console.log("++++++++++dbPromises++++++++++++");
+      // console.log(dbPromises);  // will be array of resolves
       // Close the database connection...
       dbConnection.end();
     }).catch(()=>{
-      console.log("caught something via catch Promise.all");
-      console.log("-----------dbPromises------------");
-      console.log(dbPromises);
+      // console.log("caught something via catch Promise.all");
+      // console.log("-----------dbPromises------------");
+      // console.log(dbPromises);
       dbConnection.end();
     }); // Promise.all
   });  // end parseString
