@@ -5,8 +5,11 @@
 // 2.  use the API to request all locations and current reading for each location.  The current Honeywell API returns XML so it gets transformed to JSON.
 // 3.  Use the transformed JSON to process the poll results
 
-var moment = require ('moment');
-var config = require('../config');
+// these will be GLOBAL......
+config = require('../config');
+mysql = require('mysql');
+dbConnection = mysql.createConnection(config.db);
+
 var createActivity = require('../utility/createActivity');
 
 var sessionID = '';
@@ -18,7 +21,11 @@ getHoneywellSessionId()
   pollHoneywellUserData()
   .then((pollResults) => {
     logoffHoneywell();
-    processHoneywellPoll(pollResults);
+    dbConnection.connect();
+    processHoneywellPoll(pollResults)
+    .then(() => {
+      dbConnection.end();
+    });
   });
 }); //getHoneywellSessionId.then
 
@@ -35,55 +42,121 @@ function processHoneywellPoll(poll){
 
   // We'll open and close the DB from this function...
   // assignment without declaration makes these GLOBAL!
-  mysql = require('mysql');
-  dbConnection = mysql.createConnection(config.db);
-  dbInsertPromises = [];  // will use .all to close db
+  // dbConnection.connect();
 
-  dbConnection.connect();
+  var pollFinishedPromise = new Promise (function(resolve, reject) {
 
-  poll.map((site) => {
-    checkLocationHours(site.LocationData.LocationID)
-    .then((hasLocationHours) => {
-      console.log(site.LocationData.LocationID, hasLocationHours);
-    });
-  }); // poll.map
+    var readyToFormatPromise = null;
 
-  dbConnection.end();  // temporary....until Promise.all
-  // Promise.all(dbPromises).then(()=>{
-  //   console.log("++++++++++dbPromises++++++++++++");
-  //   // console.log(dbPromises);  // will be array of resolves
-  //   // Close the database connection...
-  //   dbConnection.end();
-  // }).catch(()=>{
-  //   console.log("caught something via catch Promise.all");
-  //   // console.log("-----------dbPromises------------");
-  //   // console.log(dbPromises);
-  //   dbConnection.end();
-  // }); // Promise.all
-
+    var mapPromise = poll.map((site) => {
+      // console.log(site);
+      checkLocationHours(site)
+      .then((hasLocationHours) => {
+        isOpenDuringPoll = false;
+        if(hasLocationHours){
+          readyToFormatPromise = checkIsOpenDuringPoll(site);
+        } else {
+          readyToFormatPromise = createLocationHoursActivity(site);
+        };
+        readyToFormatPromise
+        .then((site) => {
+          saveReadingsProcess(site);
+          resolve(true);
+        });
+      });
+    }); // poll.map
+  })
+  .catch((err) => {
+    console.log(err);
+  });
+  
+  return(pollFinishedPromise);
 }; // processHoneywellPoll
-function checkLocationHours(locationID){
-  // Check the DB to see if the user has established LocationHours.
 
-  return( new Promise (function(resolve, reject) {
-    var checkLocationHoursSQL = `SELECT * from LocationHours WHERE locationId = ${locationID};`;
+function saveReadingsProcess(site){
+  console.log("saveReadingsProcess");
+  console.log(site);
+};
+function createLocationHoursActivity(site){
+  console.log("createLocationHoursActivity");
+
+  var dbPromise = new Promise (function(resolve, reject) {
+    resolve(true);
+  })
+  .catch((err) => {
+    console.log(err);
+  });
+  return(dbPromise);
+}; // createLocationHoursActivity
+
+function checkIsOpenDuringPoll(site){
+
+  console.log("checkIsOpenDuringPoll");
+
+  var moment = require ('moment');
+
+  var mDate = moment(site.ThermostatReadingData.Created, moment.ISO_8601);
+  var dayOfWeek = mDate.day();
+  var hour = mDate.hour();
+  var minute = mDate.minute();
+
+  var militaryTime = (hour * 100) + minute;
+  console.log(`militaryTime: ${militaryTime}`);
+
+  var dbPromise = new Promise (function(resolve, reject) {
+    var checkOpenSQL = `SELECT * FROM LocationHours WHERE locationId = ${site.LocationData.LocationID} AND dayOfWeek = ${dayOfWeek} AND ((${militaryTime} >= openHour) AND (${militaryTime} <= closeHour));`;
+
+    dbConnection.query(checkOpenSQL, function(err, results){
+      if(err){
+        console.log(err);
+        reject(err);
+      }
+      else {
+        if (results.length > 0){  // Found match..open!
+          console.log(`${site.LocationData.LocationID} is OPEN`);
+          isOpenDuringPoll = true;  // kludge with GLOBAL
+          resolve(true);
+        } else {
+          console.log(`${site.LocationData.LocationID} is CLOSED`);
+          isOpenDuringPoll = false; // kludge with GLOBAL
+          resolve(false);  // No match....closed!
+        };
+      };
+    });
+  })
+  .catch((err) => {
+    console.log(err);
+  });
+  return(dbPromise);
+}; // checkIsOpenDuringPoll
+
+function checkLocationHours(site){
+  // Check the DB to see if the user has established LocationHours.
+  console.log("checkLocationHours");
+
+  var dbPromise = new Promise (function(resolve, reject) {
+    var checkLocationHoursSQL = `SELECT * from LocationHours WHERE locationId = ${site.LocationData.LocationID};`;
 
     dbConnection.query(checkLocationHoursSQL, function(err, results){
       if(err){
+        console.log(err);
         reject(err);
       }
       else {
         if (results.length > 0){  // locationHours exist!
+          site.LocationData.hasLocationHours = true;
           resolve(true);
         } else {
+          site.LocationData.hasLocationHours = false;
           resolve(false);  // no locationHours found
         };
       };
     });
-  }))
+  })
   .catch((err) => {
     console.log(err);
   });
+  return(dbPromise);
 }; // checkLocationHours
 
 function getHoneywellSessionId(){
