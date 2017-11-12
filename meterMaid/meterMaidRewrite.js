@@ -10,6 +10,7 @@ config = require('../config');
 mysql = require('mysql');
 dbConnection = mysql.createConnection(config.db);
 
+// these are LOCAL.......
 var createActivity = require('../utility/createActivity');
 
 var sessionID = '';
@@ -33,22 +34,18 @@ console.log("!!!!!Next Lines of Main Code Are Running!!!!!")
 // console.log (pollResults);
 
 function processHoneywellPoll(poll){
-  // Poll contains Location information for each site the user has registered with Honeywell.  There is also Thermostat and Reading data with each Poll.
+  // Poll data contains Location information for each site the user has registered with Honeywell.  There is also Thermostat and Reading data with each Poll.
   // Iterate through Locations, Thermostat, and Readings...
   // With each iteration:
   // 1.  Check to see if there are LocationHours in our DB.  These are used to determine if the Reading occurred during business hours or not.  This is a critical boolean value for the overall system.
   // 2.  If there are no LocationHours, create an Activity to remind the user that they need to define them in order to get value from the system.
   // 3.  Format a complete Reading record and INSERT it into our DB.
 
-  // We'll open and close the DB from this function...
-  // assignment without declaration makes these GLOBAL!
-  // dbConnection.connect();
-
   var pollFinishedPromise = new Promise (function(resolve, reject) {
 
     var readyToFormatPromise = null;
 
-    var mapPromise = poll.map((site) => {
+    poll.map((site) => {
       // console.log(site);
       checkLocationHours(site)
       .then((hasLocationHours) => {
@@ -59,11 +56,12 @@ function processHoneywellPoll(poll){
           readyToFormatPromise = createLocationHoursActivity(site);
         };
         readyToFormatPromise.then(() => {
-          saveReadingsProcess(site);
-          resolve(true); // mapPromise
-        });
-      });
-    }); // poll.map
+          saveReadingsProcess(site).then(() => {
+            resolve(true); // pollFinishedPromise
+          });
+        });  // readyToFormatPromise.then
+      }); //  checkLocationHours.then
+    }); // poll.Map
   })
   .catch((err) => {
     console.log(err);
@@ -74,8 +72,85 @@ function processHoneywellPoll(poll){
 
 function saveReadingsProcess(site){
   console.log("saveReadingsProcess");
-  console.log(site);
-};
+
+  translateHoneywellValues(site);
+
+  var dbPromise = new Promise (function(resolve, reject) {
+
+    // some shortcut vars.....
+    var sL = site.LocationData;
+    var sT = site.ThermostatData;
+    var sR = site.ThermostatReadingData;
+
+    var insertReadingsSQL = `INSERT INTO Readings (thermostatId,thermCreated,thermLocked,dispTemp,heatSetPoint,coolSetPoint,displayUnits,statusHeat,statusCool,heatLowerSetPt,heatUpperSetPt,coolLowerSetPt,coolUpperSetPt,schedHeatSp,schedCoolSp,systemSwitchPos,equipmentStatus,fanPosition,fanRunning,weatherIsDefined,weatherIsValid,weatherTemp,weatherTempUnit,weatherCondition,operatingHoursFlag,thermCreatedDay, thermCreatedHour, thermCreatedMin)  VALUES (${sT.ThermostatID}, "${sR.Created}", ${sR.thermLocked}, ${sR.DispTemperature}, ${sR.HeatSetpoint}, ${sR.CoolSetpoint},"${sR.DisplayedUnits}", ${sR.StatusHeat}, ${sR.StatusCool}, ${sR.HeatLowerSetptLimit}, ${sR.HeatUpperSetptLimit}, ${sR.CoolLowerSetptLimit}, ${sR.CoolUpperSetptLimit}, ${sR.SchedHeatSp},${sR.SchedCoolSp},
+    ${sR.SystemSwitchPosition}, "${sT.EquipmentStatus}", "${sT.Fan[0].Position}", ${sR.fanRunning}, ${sR.weatherIsDefined}, ${sR.weatherIsValid}, ${sL.CurrentWeather[0].Temperature}, "${sL.CurrentWeather[0].TempUnit}", "${sL.CurrentWeather[0].Condition}", ${sR.isOpenDuringPoll}, ${sR.thermCreatedDay}, ${sR.thermCreatedHour}, ${sR.thermCreatedMin});`;
+
+    dbConnection.query(insertReadingsSQL, function (err, result) {
+      if (err){
+        reject(err);
+      } else {
+        console.log("Reading record inserted");
+        resolve(result);
+      };
+    }); //query
+  })
+  .catch((err) => {
+    console.log(err);
+  });
+
+  return(dbPromise);
+};  // saveReadingsProcess
+
+function translateHoneywellValues(site){
+  console.log("translateHoneywellValues");
+  // Some values need to be evaluated and translated...do that here
+  // some shortcut vars.....
+  var sL = site.LocationData;
+  var sT = site.ThermostatData;
+  var sR = site.ThermostatReadingData;
+
+  var moment = require ('moment');
+  // parsing out and storing the datetime into different components provides a lot of flexibility later on...
+  var mDate = moment(sR.Created, moment.ISO_8601);
+  sR.thermCreatedDay = mDate.day();
+  sR.thermCreatedHour = mDate.hour();
+  sR.thermCreatedMin = mDate.minute();
+
+  if (sT.UI[0].ThermostatLocked == 'true'){
+    sR.thermLocked = true;
+  }
+  else{
+    sR.thermLocked = false;
+  }
+
+  if (theThermostatsData.Fan[0].IsFanRunning == 'true'){
+    sR.fanRunning = true;
+  }
+  else{
+    sR.fanRunning = false;
+  }
+
+  if (theThermostatsData.Fan[0].CanSetOn == 'true'){
+    sR.fanCanSetOn = true;
+  }
+  else{
+    sR.fanCanSetOn = false;
+  }
+
+  if (theLocationsData.CurrentWeather[0].IsDefined == 'true'){
+    sR.weatherIsDefined = true;
+  }
+  else{
+    sR.weatherIsDefined = false;
+  }
+
+  if (theLocationsData.CurrentWeather[0].IsValid == 'true'){
+    sR.weatherIsValid= true;
+  }
+  else{
+    sR.weatherIsValid = false;
+  }
+};  //translateHoneywellValues
 
 function createLocationHoursActivity(site){
   console.log("createLocationHoursActivity");
@@ -168,7 +243,7 @@ function getHoneywellSessionId(){
 var fsIdPass = require('fs');
 var idPassRecord = '';
 
-// Use synchronous read as we really can't do anything else until we have the userId and password....
+// Use synchronous read as we really can't do anything else until we have the userId and password....TODO:  this needs to come from the DB eventually
 idPassRecord = fsIdPass.readFileSync('../myThermostats.txt', 'utf8');
 
 var userIdPass = idPassRecord.split("|");
@@ -279,15 +354,7 @@ function logoffHoneywell() {
 }; // logoffHoneywell
 
 function transformPollResults(xmlResponse){
-  // Transform the xml to JSON
-  // For each Location...
-  // A.  Next release?  check to see if user exists or needs to be initialized
-  // 1.  Check to see if we have Operating Hours set up
-  // 2.  If we do, then check to see if the reading took place during Operating LocationHours
-  // 3.  If we don't have Operating Hours set up, set an activity that will be used to remind the user to set them up.
-  // 4.  Format reading record.
-  // 5.  Insert the reading record.
-  // Close the db after all poll results have been processed.
+  // Transform the xml response to JSON
   var parseString = require('xml2js').parseString;
   var locationsPoll = [];
   parseString(xmlResponse, function (error, results) {
