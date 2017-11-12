@@ -34,25 +34,56 @@ function processHoneywellPoll(poll){
   // 3.  Format a complete Reading record and INSERT it into our DB.
 
   // We'll open and close the DB from this function...
-  var mysql = require('mysql');
-  var dbInsertPromises = [];  //TODO: PROMISES
+  // assignment without declaration makes these GLOBAL!
+  mysql = require('mysql');
+  dbConnection = mysql.createConnection(config.db);
+  dbInsertPromises = [];  // will use .all to close db
 
+  dbConnection.connect();
 
   poll.map((site) => {
     checkLocationHours(site.LocationData.LocationID)
     .then((hasLocationHours) => {
-      console.log(hasLocationHours);
+      console.log(site.LocationData.LocationID, hasLocationHours);
     });
   }); // poll.map
+
+  dbConnection.end();  // temporary....until Promise.all
+  // Promise.all(dbPromises).then(()=>{
+  //   console.log("++++++++++dbPromises++++++++++++");
+  //   // console.log(dbPromises);  // will be array of resolves
+  //   // Close the database connection...
+  //   dbConnection.end();
+  // }).catch(()=>{
+  //   console.log("caught something via catch Promise.all");
+  //   // console.log("-----------dbPromises------------");
+  //   // console.log(dbPromises);
+  //   dbConnection.end();
+  // }); // Promise.all
 
 }; // processHoneywellPoll
 function checkLocationHours(locationID){
   // Check the DB to see if the user has established LocationHours.
-  console.log(`locationID: ${locationID}`);
 
   return( new Promise (function(resolve, reject) {
-    resolve(true);
-  }));
+    var checkLocationHoursSQL = `SELECT * from LocationHours WHERE locationId = ${locationID};`;
+
+    dbConnection.query(checkLocationHoursSQL, function(err, results){
+      if(err){
+        reject(err);
+      }
+      else {
+        if (results.length > 0){  // locationHours exist!
+          resolve(true);
+        } else {
+          resolve(false);  // no locationHours found
+        };
+      };
+    });
+  }))
+  .catch((err) => {
+    console.log(err);
+  });
 }; // checkLocationHours
 
 function getHoneywellSessionId(){
