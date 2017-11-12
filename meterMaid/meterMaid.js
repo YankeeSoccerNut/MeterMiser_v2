@@ -75,6 +75,8 @@ function saveReadingsProcess(site){
 
   translateHoneywellValues(site);
 
+  confirmFreshReading(site);
+
   var dbPromise = new Promise (function(resolve, reject) {
 
     // some shortcut vars.....
@@ -99,7 +101,63 @@ function saveReadingsProcess(site){
   });
 
   return(dbPromise);
+
 };  // saveReadingsProcess
+
+function confirmFreshReading(site){
+  // Find readings for this thermostat with the same datatimestamp...
+  // Apply the 3 strikes rule....
+  // Create an Activity for a "LostConnection" if 3 or more found...
+
+  // some shortcut vars.....
+  var sL = site.LocationData;
+  var sT = site.ThermostatData;
+  var sR = site.ThermostatReadingData;
+
+  var dbPromise = new Promise (function(resolve, reject) {
+    var freshReadingSQL = `SELECT thermostatId, COUNT(*) as readingsCount FROM Readings WHERE thermostatId = ${sT.ThermostatID} AND thermCreated = '${sR.Created}';`;
+
+    dbConnection.query(freshReadingSQL, function(err, results){
+      if(err){
+        console.log(err);
+        reject(err);
+      }
+      else {
+        // console.log(results);
+        // console.log(`results[0].readingsCount: ${results[0].readingsCount}`);
+        resolve(results[0].readingsCount);
+      };
+    })  // dbConnection.query
+  })
+  .catch((err) => {
+    console.log(err);
+  }); // dbPromise
+
+  dbPromise.then((results) => {
+    console.log("dbPromise.then for createLostConnectionActivity");
+    console.log(results);
+    if (results >= 3){  // 3 strikes rule!
+      createLostConnectionActivity(site, results);
+    };
+  })
+  .catch((err) => {
+    console.log(err);
+  });
+
+  return(dbPromise);
+}; // confirmFreshReading
+
+function createLostConnectionActivity(site, count){
+  console.log("createLostConnectionActivity");
+  // Use a utility function here to insert into the ActivityLog table....
+  activityObj.locationId = site.LocationData.LocationID;
+  activityObj.triggerId = 2; // LostConnection
+  activityObj.message = `From meterMaid:  Lost connection? No change in  ${count} polls`;
+
+  var dbPromise = createActivity(dbConnection, activityObj);  // createActivity returns a promise
+
+  return(dbPromise);
+}; // createLostConnectionActivity
 
 function translateHoneywellValues(site){
   console.log("translateHoneywellValues");
