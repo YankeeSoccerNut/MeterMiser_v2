@@ -3,7 +3,7 @@ activityObj = require('./activityObj');
 function createActivity(dbConnection, activityObj){
   console.log("In createActivity...");
 
-  var insertSQL = `INSERT INTO ActivityLog (status, triggerId, message) VALUES (0, ${activityObj.triggerId}, '${activityObj.message}');`;
+  var insertSQL = `INSERT INTO ActivityLog (status, locationId, triggerId, message) VALUES (0, ${activityObj.locationId}, ${activityObj.triggerId}, '${activityObj.message}');`;
 
   return(new Promise(function(resolve, reject) {
     dbConnection.query(insertSQL, function (err, result) {
