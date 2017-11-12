@@ -58,10 +58,9 @@ function processHoneywellPoll(poll){
         } else {
           readyToFormatPromise = createLocationHoursActivity(site);
         };
-        readyToFormatPromise
-        .then((site) => {
+        readyToFormatPromise.then(() => {
           saveReadingsProcess(site);
-          resolve(true);
+          resolve(true); // mapPromise
         });
       });
     }); // poll.map
@@ -69,7 +68,7 @@ function processHoneywellPoll(poll){
   .catch((err) => {
     console.log(err);
   });
-  
+
   return(pollFinishedPromise);
 }; // processHoneywellPoll
 
@@ -77,15 +76,16 @@ function saveReadingsProcess(site){
   console.log("saveReadingsProcess");
   console.log(site);
 };
+
 function createLocationHoursActivity(site){
   console.log("createLocationHoursActivity");
+  // Use a utility function here to insert into the ActivityLog table....
+  activityObj.locationId = site.LocationData.LocationID;
+  activityObj.triggerId = 1; // NoLocationHours
+  activityObj.message = 'From meterMaid:  No locationHours';
 
-  var dbPromise = new Promise (function(resolve, reject) {
-    resolve(true);
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+  var dbPromise = createActivity(dbConnection, activityObj);  // createActivity returns a promise
+
   return(dbPromise);
 }; // createLocationHoursActivity
 
@@ -106,6 +106,8 @@ function checkIsOpenDuringPoll(site){
   var dbPromise = new Promise (function(resolve, reject) {
     var checkOpenSQL = `SELECT * FROM LocationHours WHERE locationId = ${site.LocationData.LocationID} AND dayOfWeek = ${dayOfWeek} AND ((${militaryTime} >= openHour) AND (${militaryTime} <= closeHour));`;
 
+    // console.log(checkOpenSQL);
+
     dbConnection.query(checkOpenSQL, function(err, results){
       if(err){
         console.log(err);
@@ -114,11 +116,11 @@ function checkIsOpenDuringPoll(site){
       else {
         if (results.length > 0){  // Found match..open!
           console.log(`${site.LocationData.LocationID} is OPEN`);
-          isOpenDuringPoll = true;  // kludge with GLOBAL
+          site.ThermostatReadingData.isOpenDuringPoll = true;
           resolve(true);
         } else {
           console.log(`${site.LocationData.LocationID} is CLOSED`);
-          isOpenDuringPoll = false; // kludge with GLOBAL
+          site.ThermostatReadingData.isOpenDuringPoll = false;
           resolve(false);  // No match....closed!
         };
       };
@@ -131,7 +133,8 @@ function checkIsOpenDuringPoll(site){
 }; // checkIsOpenDuringPoll
 
 function checkLocationHours(site){
-  // Check the DB to see if the user has established LocationHours.
+  // Check the DB to see if the user has established LocationHours.  Default the isOpenDuringPoll the Reading to false, it may be overwritten later.
+
   console.log("checkLocationHours");
 
   var dbPromise = new Promise (function(resolve, reject) {
@@ -143,6 +146,7 @@ function checkLocationHours(site){
         reject(err);
       }
       else {
+        site.ThermostatReadingData.isOpenDuringPoll = false;
         if (results.length > 0){  // locationHours exist!
           site.LocationData.hasLocationHours = true;
           resolve(true);

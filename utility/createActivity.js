@@ -5,7 +5,7 @@ function createActivity(dbConnection, activityObj){
 
   var insertSQL = `INSERT INTO ActivityLog (status, locationId, triggerId, message) VALUES (0, ${activityObj.locationId}, ${activityObj.triggerId}, '${activityObj.message}');`;
 
-  return(new Promise(function(resolve, reject) {
+  var dbPromise = new Promise(function(resolve, reject) {
     dbConnection.query(insertSQL, function (err, result) {
       if (err){
         reject(err);
@@ -14,7 +14,8 @@ function createActivity(dbConnection, activityObj){
       resolve(result);
       };
     });
-  }));
+  });
+  return(dbPromise);
 };
 
 module.exports = createActivity;
