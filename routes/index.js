@@ -28,6 +28,10 @@ router.get('/performance', function(req, res, next) {
   res.render('stackable');
 });
 
+router.get('/activitylog', function(req,res,next) {
+	res.render('activitylog');
+})
+
 router.get('/sign-up', function(req, res, next) {
   res.render('sign-up');
 });

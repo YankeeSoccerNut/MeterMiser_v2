@@ -124,7 +124,7 @@ $(document).ready(()=>{
 
 
     //render the table
-    var dataTable = tabulate(dataForTable, ["Date", "Location", "Status","Indications"]);
+    var dataTable = tabulate(dataForTable, ["Date", "Location", "Status",""]);
     $('#history-table').dataTable();
 	});
 
@@ -141,8 +141,8 @@ $(document).ready(()=>{
 
 	// The table generation function
 	function tabulate(data, columns) {
+		formatTimeTable = d3.timeFormat('%a %b %-d %-I:%M %p');
 	    var table = d3.select("#table-container").append("table")
-	            .attr("style", "margin-left: 400px")
 	            .attr("id","history-table")
 	            .attr("class","table")
 	            .attr("class","table-striped")
@@ -171,7 +171,7 @@ $(document).ready(()=>{
 	        .data(function(d) {
 	            return columns.map(function(column) {
 	            	if(column == "Date"){
-	            		return {column: column, value: d.dateTimeInfo.dateComplete}
+	            		return {column: column, value: formatTimeTable(d.dateTimeInfo.dateComplete)}
 	            	}else if(column == "Location"){
 	            		return {column: column, value: d.location}
 	            	}else if(column == "Status"){

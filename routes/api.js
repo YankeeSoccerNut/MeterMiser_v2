@@ -196,6 +196,46 @@ router.get('/Readings', secure_pass, function(req, res, next) {
   });
 });
 
+router.get('/ActivityLog', secure_pass, function(req, res, next) {
+  // Supports all thermostats for user,  all thermostats for user for a location, or a specific thermostat for the user
+
+  if (hasQueryString(req)) {
+    // var thermostatId = parseInt(req.query.thermostatId);
+    // var locationId = parseInt(req.query.locationId);
+    // if ((thermostatId > 0) && (locationId > 0)){
+    //   console.log("WAT? One or the other, not both")
+    // } else if (thermostatId > 0) {
+    //   selectThermostatsSQL = `SELECT * FROM Thermostats WHERE thermostatId = ${parseInt(req.query.thermostatId)}`;
+    // } else if (locationId > 0) {
+    //   selectThermostatsSQL = `SELECT * FROM Thermostats WHERE locationId = ${parseInt(req.query.locationId)}`;
+    // } else {
+    //   console.log("WAT? Query string doesn't make sense")
+    // };
+  } else {
+    var selectActivityLogSQL = `SELECT * FROM ActivityLog`;
+  };
+
+  var mysql = require('mysql');
+
+  // open up the database connection...
+  var dbConnection = mysql.createConnection(config.db);
+  dbConnection.connect();
+
+  // Send the SQL...
+  dbConnection.query(selectActivityLogSQL, function (err, result) {
+    if (err){
+      console.log(err);
+    } else {
+    console.log("Activity Log selected");
+    }
+    res.send(result);
+
+    // Close the database connection...
+    dbConnection.end();
+
+  });
+});
+
 router.get('/Now', secure_pass, function(req, res, next) {
 
   // This route is a bit different in that it needs to make a realtime call to the Honeywell API

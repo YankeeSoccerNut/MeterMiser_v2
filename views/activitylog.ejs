@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Activity Log</title>
+    <% include head %>
+    <script type="text/javascript" src="javascripts/activitylog.js"></script>
+
+  </head>
+
+  <body>
+
+<% include navbar %>
+
+  <div class="container-history">
+
+    <div class="text-center">
+      Select Date Range
+      <!-- Date range selector....may need to be styled differently -->
+      <div id="reportrange" class="pull-right" style="background: #fff; cursor: pointer; padding: 5px 10px; border: 1px solid #ccc; width: 100%">
+
+        <i class="glyphicon glyphicon-calendar fa fa-calendar"></i>&nbsp;
+        <span></span> <b class="caret"></b>
+      </div>
+
+    </div>
+
+    <div id="legend"></div>
+
+    <div id="graph-container">
+
+    </div>
+    <!-- temporary target for table format...will change when add toggle functionality for chart/table view-->
+    <div id="table-container"></div>
+  </div><!-- container -->
+
+    <!-- JS -->
+    <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+
+  </body>
+</html>
