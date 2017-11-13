@@ -58,7 +58,6 @@ function processHoneywellPoll(poll){
         };
         readyToFormatPromise.then(() => {
           saveReadingsProcess(site).then(() => {
-            resolve(true); // pollFinishedPromise
           });
         });  // readyToFormatPromise.then
       }); //  checkLocationHours.then
@@ -67,6 +66,11 @@ function processHoneywellPoll(poll){
   .catch((err) => {
     console.log(err);
   });
+  
+  // push pollFinishedPromise to an array.....
+  // Promise.all(arrayOfPollFinishedPromises).then RESOLVE!!!
+  // resolve(true); // pollFinishedPromise
+
 
   return(pollFinishedPromise);
 }; // processHoneywellPoll

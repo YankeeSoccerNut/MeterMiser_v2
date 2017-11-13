@@ -3,6 +3,7 @@ var router = express.Router();
 var request = require('request');
 var config = require('../config');
 var secure_pass = require('../utility/securepass');
+var getHoneywellSessionId = require('../utility/getHoneywellSessionId');
 
 function hasQueryString(req) {
 
@@ -298,5 +299,13 @@ router.get('/Now', secure_pass, function(req, res, next) {
     });  // curl GetThermostat
   }); // curl sessionID
 }); // Now route
+
+router.post('/validateHoneywell', secure_pass, function(req, res, next) {
+  // Use the email and password we received in req.body to ask honeywell
+  // for a sessionId....
+  // If we get one, great!  We have valid user and pass.
+  // ??  Do we want to store them now or later in our 3rd Party Sites table ??
+  res.send("You hit the /validateHoneywell route!")
+});  // /validateHoneywell
 
 module.exports = router;
