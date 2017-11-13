@@ -25,6 +25,7 @@ getHoneywellSessionId()
     dbConnection.connect();
     processHoneywellPoll(pollResults)
     .then(() => {
+      console.log("dbConnection CLOSING!")
       dbConnection.end();
     });
   });

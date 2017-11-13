@@ -14,6 +14,8 @@ function createActivity(dbConnection, activityObj){
       resolve(result);
       };
     });
+  }).catch((err) => {
+    console.log(err);
   });
   return(dbPromise);
 };
