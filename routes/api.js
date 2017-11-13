@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var request = require('request');
+var bcrypt = require('bcrypt-nodejs');
 var config = require('../config');
 var secure_pass = require('../utility/securepass');
 var getHoneywellSessionId = require('../utility/getHoneywellSessionId');
@@ -307,6 +308,7 @@ router.post('/validateHoneywell', secure_pass, function(req, res, next) {
   // ??  Do we want to store them now or later in our 3rd Party Sites table ??
   console.log(`email: ${req.body.email}`);
   console.log(`password: ${req.body.password}`);
+  // open up the database connection...
 
   // try to get a SessionID from Honeywell
 
@@ -314,10 +316,33 @@ router.post('/validateHoneywell', secure_pass, function(req, res, next) {
 
   sessionPromise.then((sessionID) => {
     if(sessionID != ''){  //have a sessionID, user is authenticated!
-      res.send(`sessionID: ${sessionID}`);
-    } else {
+
+      var mysql = require('mysql');
+      var dbConnection = mysql.createConnection(config.db);
+      dbConnection.connect();
+
+      hash = bcrypt.hashSync(req.body.password);
+
+      var insertQuery = `INSERT INTO UserThirdPartySites (uid, thirdPartySite, thirdPartyUID, thirdPartyPassword) VALUES (?,?,?,?);`;
+      console.log(insertQuery);
+
+      // hardcoded the 1 for Honeywell...
+      dbConnection.query(insertQuery, [req.session.uid, 1,req.body.email, hash],(error)=>{
+        if(error){
+          throw error;
+        }else{
+          console.log('User signed up successfully!');
+          req.session.email = req.body.email
+          dbConnection.end();
+          res.redirect('/users/usersProfile')
+        }
+      }); // connection.query
+    } else {   // if(sessionID != '')
       res.send('Honeywell failed to authenticate your email and password');
     };
+  })
+  .catch((err) => {
+    console.log(err);
   });
 
   console.log("javascript is RUNNING the next lines");
