@@ -21,6 +21,10 @@ router.get('/performance', function(req, res, next) {
   res.render('stackable');
 });
 
+router.get('/sign-up'), function(req, res, next) {
+  res.render('sign-up');
+}
+
 router.post('/loginProcess',(req,res,next)=>{
   // Check to see if email/pass exists in database
 

@@ -100,8 +100,11 @@
           <div class="linkpad">
 
           Don't have an account?
+<<<<<<< Updated upstream
           <a class="signupLink" href="/users/sign-up" rel="noopener">Sign up »</a>
-
+=======
+          <a class="signupLink" href="users/sign-up" rel="noopener">Sign up »</a>
+>>>>>>> Stashed changes
         </div>
         </div>
 
