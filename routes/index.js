@@ -36,6 +36,10 @@ router.get('/usersProfile', function(req, res, next) {
   res.render('usersProfile');
 });
 
+router.get('/account-main', function(req, res, next) {
+  res.render('user-account');
+});
+
 router.get('/locations', function(req, res, next) {
   res.render('locations');
 });
@@ -66,7 +70,7 @@ router.post('/loginProcess',(req,res,next)=>{
                   req.session.email = row.email;
                   req.session.loggedIn = true;
                   console.log(req.session.uid)
-                  res.redirect('users/usersProfile');
+                  res.redirect('/locations');
               }else{
                   // user in db, but password is bad. Send them back to login
                   res.redirect('/login?msg=badPass');
