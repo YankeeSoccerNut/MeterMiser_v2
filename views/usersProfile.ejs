@@ -2,10 +2,51 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<title>logged In</title>
+	<title>Honeywell Validation</title>
+	<% include head %>
 </head>
 <body>
+
 	<h1>If you see this page you have successfully logged In.</h1>
 	<p>the users personal map locations will be in this route</p>
+	<div class="row clearfix">
+
+            <div class="col-md-12">
+              <div class="input-group">
+                <span class="input-group-addon">
+                  <i class="material-icons">email</i>
+                </span>
+                <div class="form-line">
+                  
+                  <input id="email-input" type="text" class="form-control email" placeholder="Email Address" name="email"> 
+                
+            
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          <div class="row clearfix">
+
+            <div class="col-md-12">
+              <div class="input-group">
+                <span class="input-group-addon">
+                  <i class="material-icons">lock</i>
+                </span>
+                <div class="form-line">
+                  <input id="password-input" type="password" class="form-control password" placeholder="Password" name="password">
+
+                </div>
+				<button id="validateHoneywell" type="submit" class="btn btn-signin-submit btn-lg" style="width: 20%;">Validate</button>
+              </div>
+
+            </div>
+
+          </div>
+	<!-- custom JS -->
+	<script type="text/javascript" src="/javascripts/usersProfile.js"></script>
 </body>
 </html>

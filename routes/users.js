@@ -23,7 +23,7 @@ router.get('/usersProfile', (req,res,next)=>{
 });
 
 router.get('/sign-up',(req,res,next)=>{
-	res.render('sign-up')
+	res.render('sign-up',{email:req.session.email});
 })
 
 router.post('/sign-up-process',(req,res,next)=>{
@@ -40,7 +40,10 @@ router.post('/sign-up-process',(req,res,next)=>{
 	connection.query(selectQuery, [email], (error,results)=>{
 		console.log(results);
 		if(results.length != 0){
+
 			console.log('user already exists');
+			// res.send('This user already exist.')
+			res.redirect('/users', {msg: 'User already exists.'})
 		}else{
 			console.log('user doesnt exist');
 
@@ -53,19 +56,20 @@ router.post('/sign-up-process',(req,res,next)=>{
 					throw error;
 				}else{
 					console.log('User signed up successfully!');
-					// res.redirect()
+					req.session.email = email
+					res.redirect('/users/usersProfile')
 				}
 			})
 		}
 	})
-})
+})//router.post('/sign-up-process'
 
-	// var hash = bcrypt.hashSync(password);
-// 	var selectQuery = `SELECT * FROM Users WHERE (email, password) = (?,?);`;
-// 	console.log('im here now. this is still magic to me. still in shock')
-// 	console.log(req.body)
-// 	res.redirect('/usersProfile');
-// })
+router.post('/validateProcess',(req,res,next)=>{
+	res.send('posted validateProcess')
+})//router.post('/validateProcess'
+
+
+
 
 
 
