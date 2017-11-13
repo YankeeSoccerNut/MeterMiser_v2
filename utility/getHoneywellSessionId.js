@@ -1,6 +1,6 @@
 function getHoneywellSessionId(email, password){
 // Get user id and password.....// TODO: encrypt/decrypt for security
-
+console.log("In getHoneywellSessionId function....")
 // Now format then make the request for a sessionId....using curl
 // alternate version had to format this way to avoid having OS interpret the & as 'run in background'
 var curlRequest = `curl -s -k -X 'POST' -H 'Content-Type: application/x-www-form-urlencoded' -H 'User-Agent: Apache-HttpClient/UNAVAILABLE (java 1.4)' \
@@ -39,7 +39,7 @@ var xmlResponse = "";
           sessionID = result.AuthenticateLoginResult.SessionID;
           resolve(sessionID);
       });
-      // console.log(`sessionID: ${sessionID}`);
+      // console.log(`in getHoneywellSessionId the sessionID: ${sessionID}`);
     });  // curl command
   })
   .catch((err) => {

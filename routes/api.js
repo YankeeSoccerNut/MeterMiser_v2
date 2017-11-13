@@ -305,7 +305,22 @@ router.post('/validateHoneywell', secure_pass, function(req, res, next) {
   // for a sessionId....
   // If we get one, great!  We have valid user and pass.
   // ??  Do we want to store them now or later in our 3rd Party Sites table ??
-  res.send("You hit the /validateHoneywell route!")
+  console.log(`email: ${req.body.email}`);
+  console.log(`password: ${req.body.password}`);
+
+  // try to get a SessionID from Honeywell
+
+  var sessionPromise = getHoneywellSessionId(req.body.email, req.body.password);
+
+  sessionPromise.then((sessionID) => {
+    if(sessionID != ''){  //have a sessionID, user is authenticated!
+      res.send(`sessionID: ${sessionID}`);
+    } else {
+      res.send('Honeywell failed to authenticate your email and password');
+    };
+  });
+
+  console.log("javascript is RUNNING the next lines");
 });  // /validateHoneywell
 
 module.exports = router;
