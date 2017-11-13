@@ -22,7 +22,10 @@ router.get('/performance', function(req, res, next) {
 });
 
 router.post('/loginProcess',(req,res,next)=>{
+  // Check to see if email/pass exists in database
+
 	console.log('im in INDEX')
+  res.send("Need to implement the authentication for entered email/pass");
 })
 
 // router.get('/', function(req, res, next) {
