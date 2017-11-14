@@ -354,7 +354,8 @@ router.post('/validateHoneywell', secure_pass, function(req, res, next) {
           console.log('User signed up successfully!');
           req.session.email = req.body.email
           dbConnection.end();
-          res.redirect('/users/usersProfile')
+          // res.redirect('/users/usersProfile')
+          res.render('index'); //This is temp
         }
       }); // connection.query
     } else {   // if(sessionID != '')

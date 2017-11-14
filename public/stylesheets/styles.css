@@ -325,3 +325,9 @@ body{
     color: white;
     white-space: nowrap;
 }
+
+/*Honeywell Authentication*/
+.ha-head3{
+  padding: 15px;
+
+}
