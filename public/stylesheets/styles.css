@@ -133,7 +133,6 @@ body{
   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.33);
   -webkit-font-smoothing: antialiased
   font-weight: bold;
-  margin-bottom: 20px;
 }
 
 .btn-location-buttons:hover{
@@ -190,7 +189,7 @@ body{
 }
 
 .location-buttons{
-  margin-top: 30px;
+  margin-top: 0px;
 }
 
 .logo-font{
