@@ -42,6 +42,8 @@ function processHoneywellPoll(poll){
   // 2.  If there are no LocationHours, create an Activity to remind the user that they need to define them in order to get value from the system.
   // 3.  Format a complete Reading record and INSERT it into our DB.
 
+  var saveReadingsPromisesArray = [];
+
   var pollFinishedPromise = new Promise (function(resolve, reject) {
 
     var readyToFormatPromise = null;
@@ -57,20 +59,26 @@ function processHoneywellPoll(poll){
           readyToFormatPromise = createLocationHoursActivity(site);
         };
         readyToFormatPromise.then(() => {
-          saveReadingsProcess(site).then(() => {
+          saveReadingsPromisesArray.push(saveReadingsProcess(site));
+          Promise.all(saveReadingsPromisesArray).then(() => {
+            resolve(true);
           });
+          console.log("***********PROMISES PROMISES***************")
+          console.log(saveReadingsPromisesArray);
         });  // readyToFormatPromise.then
       }); //  checkLocationHours.then
     }); // poll.Map
+    // Promise.all(saveReadingsPromisesArray).then(() => {
+    //   resolve(true); // pollFinishedPromise
+    // });
   })
   .catch((err) => {
     console.log(err);
   });
-  
-  // push pollFinishedPromise to an array.....
-  // Promise.all(arrayOfPollFinishedPromises).then RESOLVE!!!
-  // resolve(true); // pollFinishedPromise
 
+  // Promise.all(saveReadingsPromisesArray).then(() => {
+  //   resolve(true); // pollFinishedPromise
+  // });
 
   return(pollFinishedPromise);
 }; // processHoneywellPoll
@@ -126,14 +134,12 @@ function confirmFreshReading(site){
       if(err){
         console.log(err);
         reject(err);
-      }
-      else {
+      } else {
         // console.log(results);
-        // console.log(`results[0].readingsCount: ${results[0].readingsCount}`);
-        resolve(results[0].readingsCount);
+        console.log(`results[0].readingsCount: ${results[0].readingsCount}`);
       };
-    })  // dbConnection.query
-  })
+    });  // dbConnection.query
+  }) // dbPromise
   .catch((err) => {
     console.log(err);
   }); // dbPromise
@@ -143,6 +149,9 @@ function confirmFreshReading(site){
     console.log(results);
     if (results >= 3){  // 3 strikes rule!
       createLostConnectionActivity(site, results);
+      resolve(false);
+    } else {
+      resolve(true);
     };
   })
   .catch((err) => {
