@@ -6,7 +6,7 @@
 // 3.  Use the transformed JSON to process the poll results
 
 // these will be GLOBAL......
-config = require('../config');
+config = require('../config/config');
 mysql = require('mysql');
 dbConnection = mysql.createConnection(config.db);
 
@@ -128,7 +128,7 @@ function confirmFreshReading(site){
   // Apply the 3 strikes rule....
   // Create an Activity for a "LostConnection" if 3 or more found...
   // TODO:  Can optimize this code by using an array of promises on the outside...will allow parallel units of work.  Right now we are serializing.
-  
+
   // some shortcut vars.....
   var sL = site.LocationData;
   var sT = site.ThermostatData;
@@ -318,10 +318,10 @@ var fsIdPass = require('fs');
 var idPassRecord = '';
 
 // Use synchronous read as we really can't do anything else until we have the userId and password....TODO:  this needs to come from the DB eventually
-idPassRecord = fsIdPass.readFileSync('../myThermostats.txt', 'utf8');
-
-var userIdPass = idPassRecord.split("|");
-var trimmedUserPass = userIdPass[1].trim();
+// idPassRecord = fsIdPass.readFileSync('../myThermostats.txt', 'utf8');
+//
+// var userIdPass = idPassRecord.split("|");
+// var trimmedUserPass = userIdPass[1].trim();
 
 // Now format then make the request for a sessionId....using curl
 // alternate version had to format this way to avoid having OS interpret the & as 'run in background'
@@ -329,9 +329,9 @@ var curlRequest = `curl -s -k -X 'POST' -H 'Content-Type: application/x-www-form
 'https://tccna.honeywell.com/ws/MobileV2.asmx/AuthenticateUserLogin' \
 -d applicationID=a0c7a795-ff44-4bcd-9a99-420fac57ff04 \
 -d ApplicationVersion=2 \
--d Username=${userIdPass[0]} \
+-d Username=${config.honeywellUID} \
 -d UiLanguage=English \
--d Password=${trimmedUserPass}
+-d Password=${config.honeywellPass}
 `;
 
 // need to ask the OS to exec the curl command for us...
