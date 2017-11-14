@@ -178,13 +178,24 @@ $(document).ready(()=>{
 	            		return {column: column, value: d.status};
 	            	}else{
 	            		icons = ''
-	            			if(d.triggers.connection != ''){
-	            				icons += `<i class="material-icons">location_off</i>`
+            			if(d.triggerId == 1 || d.triggerId == 2){
+            				icons += `<i class="material-icons">priority_high</i>`
+            				if(d.triggerId = 1){
+            					icons += `<i class="material-icons">event_busy</i>`
+            				}else{
+            					icons += `<i class="material-icons">sync_problem</i>`
+            				}
+            			}else if(d.triggerId > 2 && d.triggerId < 7){
+            				if(d.triggerId == 3 || d.triggerId == 5){
+	            				icons += `<i class="material-icons">lock</i>`
+	            			}else if(d.triggerId == 4 || d.triggerId == 6){
+	            				icons += `<i class="material-icons">lock_outline</i>`
 	            			}
-	            			if(d.triggers.permHold){
-	            				icons += `<i class="material-icons">priority_high</i>`
+	            			if(d.triggerId < 5){
+	            				icons += `<i class="material-icons">warning</i>`
 	            			}
-
+            			}
+            			// can add notification icons when able to access notification status and user preferences;
 	            		return {column: column, value: icons};
 	            	}
 	            });
@@ -197,7 +208,7 @@ $(document).ready(()=>{
 	    return table;
 	}
 
-	f
+	
 
 	 
 
@@ -210,6 +221,7 @@ $(document).ready(()=>{
 			dataFormated[i].dateTimeInfo = new DateTime(d.created);
 			dataFormated[i].status = determineStatus(d.statusHeat, d.systemSwitchPos);
 			dataFormated[i].thermCreated = d.thermCreated;
+			dataFormated[i].triggerId = d.triggerId;
 			dataFormated[i].triggers = new triggersList();
 			if(dataFormated[i].status == 'Hold - Permanent'){
 				dataFormated[i].triggers.permHold = true;
