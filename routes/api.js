@@ -243,6 +243,7 @@ router.get('/Now', secure_pass, function(req, res, next) {
   var util = require('util');
   var exec = require('child_process').exec;
   var parseString = require('xml2js').parseString;
+  var config = require('../config/config');
 
   // This route is a bit different in that it needs to make a realtime call to the Honeywell API
 
@@ -264,15 +265,15 @@ router.get('/Now', secure_pass, function(req, res, next) {
   var fsIdPass = require('fs');
   var idPassRecord = '';
 
-  // Use synchronous read as we really can't do anything else until we have the userId and password....
-  idPassRecord = fsIdPass.readFileSync('../myThermostats.txt', 'utf8');
-  console.log(`idPassRecord: \n${idPassRecord}`);
-
-  var userIdPass = idPassRecord.split("|");
-  var trimmedUserPass = userIdPass[1].trim();
+  // // Use synchronous read as we really can't do anything else until we have the userId and password....
+  // idPassRecord = fsIdPass.readFileSync('../myThermostats.txt', 'utf8');
+  // console.log(`idPassRecord: \n${idPassRecord}`);
+  //
+  // var userIdPass = idPassRecord.split("|");
+  // var trimmedUserPass = userIdPass[1].trim();
 
   // Get a sessionID from Honeywell...
-  sessionIDPromise = getHoneywellSessionId(userIdPass[0], userIdPass[1]);
+  sessionIDPromise = getHoneywellSessionId(config.honeywellUID, config.honeywellPass);
 
   sessionIDPromise.then((sessionID) => {
   //Now use the sessionID to poll this user's account and get readings for all thermostats....
