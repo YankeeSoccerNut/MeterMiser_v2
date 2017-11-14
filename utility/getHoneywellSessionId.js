@@ -34,12 +34,12 @@ var xmlResponse = "";
 
       parseString(xmlResponse, function (error, result) {
           // console.log("parsing");
-          // console.log(result);
+          console.log(result);
           // console.log(error);
           sessionID = result.AuthenticateLoginResult.SessionID;
+          // console.log(`sessionID: ${sessionID}`);
           resolve(sessionID);
       });
-      // console.log(`in getHoneywellSessionId the sessionID: ${sessionID}`);
     });  // curl command
   })
   .catch((err) => {

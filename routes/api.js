@@ -237,6 +237,12 @@ router.get('/ActivityLog', secure_pass, function(req, res, next) {
 });
 
 router.get('/Now', secure_pass, function(req, res, next) {
+  var getHoneywellSessionId = require('../utility/getHoneywellSessionId');
+
+  // need to ask the OS to exec the curl command for us here too...
+  var util = require('util');
+  var exec = require('child_process').exec;
+  var parseString = require('xml2js').parseString;
 
   // This route is a bit different in that it needs to make a realtime call to the Honeywell API
 
@@ -259,86 +265,59 @@ router.get('/Now', secure_pass, function(req, res, next) {
   var idPassRecord = '';
 
   // Use synchronous read as we really can't do anything else until we have the userId and password....
-  idPassRecord = fsIdPass.readFileSync('./myThermostats.txt', 'utf8');
+  idPassRecord = fsIdPass.readFileSync('../myThermostats.txt', 'utf8');
+  console.log(`idPassRecord: \n${idPassRecord}`);
 
   var userIdPass = idPassRecord.split("|");
   var trimmedUserPass = userIdPass[1].trim();
 
-  // Now format then make the request for a sessionId....using curl
+  // Get a sessionID from Honeywell...
+  sessionIDPromise = getHoneywellSessionId(userIdPass[0], userIdPass[1]);
 
-  // alternate version had to format this way to avoid having OS interpret the & as 'run in background'
-  var curlRequest = `curl -s -k -X 'POST' -H 'Content-Type: application/x-www-form-urlencoded' -H 'User-Agent: Apache-HttpClient/UNAVAILABLE (java 1.4)' \
-  'https://tccna.honeywell.com/ws/MobileV2.asmx/AuthenticateUserLogin' \
-  -d applicationID=$a0c7a795-ff44-4bcd-9a99-420fac57ff04 \
-  -d ApplicationVersion=2 \
-  -d Username=${userIdPass[0]} \
-  -d UiLanguage=English \
-  -d Password=${trimmedUserPass}
-  `;
-
-  // console.log(curlRequest);
-
-
-  // need to ask the OS to exec the curl command for us...
-  var exec = require('child_process').exec;
-  var parseString = require('xml2js').parseString;
-
-  var command = curlRequest;
-  var xmlResponse = "";
-
-  //stdout is the response from the OS.  In this case it will be XML.
-  child = exec(command, function(error, xmlResponse, stderr){
-    console.log("AuthenticateUserLogin...")
-    console.log('stdout: ' + xmlResponse);
-    console.log('stderr: ' + stderr);
-
-    if(error !== null) {
-      console.log('exec error: ' + error);
-    };
-
-    var sessionID = '';
-
-    parseString(xmlResponse, function (error, result) {
-        console.log("parsing");
-        // console.log(result);
-        console.log(error);
-        sessionID = result.AuthenticateLoginResult.SessionID;
-    });
-  // res.send(sessionID);
-
-  // console.log(sessionID);
+  sessionIDPromise.then((sessionID) => {
   //Now use the sessionID to poll this user's account and get readings for all thermostats....
+    console.log(`In sessionIDPromise.then sessionID: ${sessionID}`);
 
-    curlRequest = `curl -H "Accept: application/xml" -H "Content-Type: application/xml" -X GET -G \
-     'https://tccna.honeywell.com/ws/MobileV2.asmx/GetThermostat' \
-     -d sessionID=${sessionID} \
-     -d thermostatId=${thermostatId}`;
+    readThermostatPromise = new Promise (function(resolve, reject) {
 
-    console.log(curlRequest);
+      curlRequest = `curl -H "Accept: application/xml" -H "Content-Type: application/xml" -X GET -G \
+       'https://tccna.honeywell.com/ws/MobileV2.asmx/GetThermostat' \
+       -d sessionID=${sessionID} \
+       -d thermostatId=${thermostatId}`;
 
-    command = curlRequest;
-    child = exec(command, function(error, xmlResponse, stderr){
-      console.log("GetThermostat...")
-      // console.log('stdout: ' + xmlResponse);
-      console.log('stderr: ' + stderr);
+      command = curlRequest;
 
-      if(error !== null) {
-        console.log('exec error: ' + error);
-      };
+      child = exec(command, function(error, xmlResponse, stderr){
+        console.log("GetThermostat...")
+        // console.log('stdout: ' + xmlResponse);
+        // console.log('stderr: ' + stderr);
 
-      var thermostats = null;
+        if(error !== null) {
+          console.log('exec error: ' + error);
+          reject(error);
+        };
 
-      parseString(xmlResponse, function (error, result) {
-          console.log("parsing");
-          // console.log(result);
-          console.log(error);
-          thermostats = result;
-      });
+        var thermostats = null;
 
+        parseString(xmlResponse, function (error, result) {
+            // console.log("parsing");
+            console.log(result);
+            // console.log(error);
+            resolve(result);
+        });
+      });  // curl GetThermostat
+    }); // readThermostatPromise
+
+    readThermostatPromise.then((thermostats) => {
       res.send(thermostats);
-
-    });  // curl GetThermostat
-  }); // curl sessionID
+    })
+    .catch((err) => {
+      console.log(err);
+    });
+  })
+  .catch((err) => {
+    console.log(err);
+  }); // sessionIDPromise
 }); // Now route
 
 router.post('/validateHoneywell', secure_pass, function(req, res, next) {
