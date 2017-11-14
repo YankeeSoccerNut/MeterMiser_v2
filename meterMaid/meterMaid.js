@@ -88,9 +88,11 @@ function saveReadingsProcess(site){
 
   translateHoneywellValues(site);
 
-  confirmFreshReading(site);
-
   var dbPromise = new Promise (function(resolve, reject) {
+
+    confirmFreshReading(site).then(()=>{
+
+
 
     // some shortcut vars.....
     var sL = site.LocationData;
@@ -112,6 +114,10 @@ function saveReadingsProcess(site){
   .catch((err) => {
     console.log(err);
   });
+})
+.catch((err) => {
+  console.log(err);
+});
 
   return(dbPromise);
 
@@ -121,7 +127,8 @@ function confirmFreshReading(site){
   // Find readings for this thermostat with the same datatimestamp...
   // Apply the 3 strikes rule....
   // Create an Activity for a "LostConnection" if 3 or more found...
-
+  // TODO:  Can optimize this code by using an array of promises on the outside...will allow parallel units of work.  Right now we are serializing.
+  
   // some shortcut vars.....
   var sL = site.LocationData;
   var sT = site.ThermostatData;
@@ -152,20 +159,6 @@ function confirmFreshReading(site){
     console.log(err);
   }); // dbPromise
 
-  // dbPromise.then((results) => {
-  //   console.log("dbPromise.then for createLostConnectionActivity");
-  //   console.log(results);
-  //   console.log(`in dbPromise.then for`)
-  //   if (results[0].readingsCount >= 3){  // 3 strikes rule!
-  //     createLostConnectionActivity(site, results[0].readingsCount);
-  //     resolve(false);
-  //   } else {
-  //     resolve(true);
-  //   };
-  // })
-  // .catch((err) => {
-  //   console.log(err);
-  // });
 
   return(dbPromise);
 }; // confirmFreshReading
