@@ -303,3 +303,25 @@ body{
     filter: alpha(opacity=20);
     opacity: 1;
 }
+
+.nav>li>a:focus, .nav>li>a:hover {
+    text-decoration: none;
+    background-color: #eee;
+    color: black;
+}
+
+.nav>li>a:active, .nav>li>a:active {
+    text-decoration: none;
+    background-color: #eee;
+    color: black;
+}
+
+.dropdown-menu>li>a {
+    display: block;
+    padding: 3px 20px;
+    clear: both;
+    font-weight: 400;
+    line-height: 1.42857143;
+    color: white;
+    white-space: nowrap;
+}
