@@ -135,28 +135,37 @@ function confirmFreshReading(site){
         console.log(err);
         reject(err);
       } else {
-        // console.log(results);
+        console.log(results);
         console.log(`results[0].readingsCount: ${results[0].readingsCount}`);
+        if (results[0].readingsCount >= 3){  // 3 strikes rule!
+          createLostConnectionActivity(site, results[0].readingsCount).then(() => {
+            resolve(false);
+          });
+        } else {
+          resolve(true);
+        };
       };
     });  // dbConnection.query
+
   }) // dbPromise
   .catch((err) => {
     console.log(err);
   }); // dbPromise
 
-  dbPromise.then((results) => {
-    console.log("dbPromise.then for createLostConnectionActivity");
-    console.log(results);
-    if (results >= 3){  // 3 strikes rule!
-      createLostConnectionActivity(site, results);
-      resolve(false);
-    } else {
-      resolve(true);
-    };
-  })
-  .catch((err) => {
-    console.log(err);
-  });
+  // dbPromise.then((results) => {
+  //   console.log("dbPromise.then for createLostConnectionActivity");
+  //   console.log(results);
+  //   console.log(`in dbPromise.then for`)
+  //   if (results[0].readingsCount >= 3){  // 3 strikes rule!
+  //     createLostConnectionActivity(site, results[0].readingsCount);
+  //     resolve(false);
+  //   } else {
+  //     resolve(true);
+  //   };
+  // })
+  // .catch((err) => {
+  //   console.log(err);
+  // });
 
   return(dbPromise);
 }; // confirmFreshReading
