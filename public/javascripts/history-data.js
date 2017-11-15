@@ -66,7 +66,10 @@ $(document).ready(()=>{
 		var dataInRange = data.filter(function(d){
 			return Date.parse(d.created) > Date.parse(start) && Date.parse(d.created) < Date.parse(end)
 		})
-		var dataForTable = formatJSON(dataInRange)
+		var dataInRangeDescending = d3.nest()
+			.sortValues(function(a,b) { return Date.parse(b.created) - Date.parse(a.created); })
+			.entries(dataInRange);
+		var dataForTable = formatJSON(dataInRangeDescending)
 		console.log(dataForTable)
 
 	// Timeframe Scales
@@ -158,6 +161,7 @@ $(document).ready(()=>{
 	        .data(columns)
 	        .enter()
 	        .append("th")
+	        	.attr("class","sorting_asc_disabled")
 	            .text(function(column) { return column; });
 
 	    // create a row for each object in the data
@@ -181,7 +185,7 @@ $(document).ready(()=>{
             			if(d.triggerId == 1 || d.triggerId == 2){
             				icons += `<i class="material-icons">priority_high</i>`
             				if(d.triggerId = 1){
-            					icons += `<i class="material-icons">event_busy</i>`
+            					icons += `<i class="material-icons">location_off</i>`
             				}else{
             					icons += `<i class="material-icons">sync_problem</i>`
             				}

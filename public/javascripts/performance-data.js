@@ -34,7 +34,7 @@ $(document).ready(()=>{
         
     })
 	// Set the dimensions of the canvas / graph	
-	var margin = {top: 10, right: 20, bottom: 20, left: 60},
+	var margin = {top: 10, right: 20, bottom: 20, left: 20},
 	    width = 400 - margin.left - margin.right,
 	    height = 500 - margin.top - margin.bottom;
 
@@ -72,7 +72,7 @@ $(document).ready(()=>{
 
 	// Define the axes
 	var xAxis = d3.axisBottom(xScale).ticks(3);
-	var yAxis = d3.axisLeft(settingRowScale);
+	var yAxis = d3.axisLeft(storeHoursRowScale).ticks();
 
 	var ySplitScale = d3.scaleLinear().range([settingRowScale.bandwidth(),0]);;
 	var yStackScale = d3.scaleLinear().range([storeHoursRowScale.bandwidth(),0]);
@@ -82,14 +82,17 @@ $(document).ready(()=>{
 		console.log(data);
 		var dataInRange = data.filter(function(d){
 			return Date.parse(d.created) > Date.parse(start) && Date.parse(d.created) < Date.parse(end)
+		});
+		var holdsOnly = dataInRange.filter(function(d){
+			return d.systemSwitchPos != 2 && d.statusHeat > 0;
 		})
 		var dataFormated = formatJSON(dataInRange)
-		console.log(dataFormated)
+		// console.log(dataFormated)
 		var dataByHours = nestedHours(dataFormated);
 		console.log(dataByHours)
-		var locationTimeSums =totalTimeByLocation(dataByHours)
+		var locationTimeSums =totalTimeByLocation(dataByHours);
 		console.log(locationTimeSums)
-		var dataByHoursPercents = percentValues(dataByHours)
+		var dataByHoursPercents = percentValues(dataByHours);
 		// console.log(d3.max(dataBySetting, function(d){return d3.max(d, function(v){return v.value})}))
 
 
@@ -109,35 +112,43 @@ $(document).ready(()=>{
 		yStackScale.domain([0,1])
 		
 
-		// yStackScale.domain([0,d3.max(dataByLocation, function(d) {return d.value})])
 
 		svg.append("g")
         .attr("class", "x axis")
         .attr("transform", "translate(0," + height + ")")
         .call(xAxis);
 
+        // Add the Y Axis
+		svg.append("g")
+		    .attr("class", "y axis")
+		    .call(yAxis)
+		    .selectAll("text")	
+	            .style("text-anchor", "middle")
+	            .attr("y", -10)
+	            .attr("dx", "5px")
+	            .attr("dy", "1px")
+	            .attr("transform", function(d) {
+	                return "rotate(-90)" 
+	                });
 
-		var oRow = svg.append('g').attr('class', 'row')
-            .selectAll('.row').data(dataByHoursPercents)
+
+		var oRow = svg.append('g').attr('class', 'o-row')
+            .selectAll('.o-row').data(dataByHoursPercents)
         .enter().append('g')
             .attr('class', 'hours-group')
             .attr("transform", function(d) {  return "translate(0," + storeHoursRowScale(d.key) + ")"; });
 
-        oRow.append('text').attr('class', 'title')
-	        .attr('dx', '-0.34em')
-	        .text(function(d) {return d.key});
+       
 
-	    var gRow = oRow.append('g').attr('class', 'row')
-            .selectAll('.row').data(function(d) {return d.values;})
+	    var gRow = oRow.append('g').attr('class', 'g-row')
+            .selectAll('.g-row').data(function(d) {return d.values;})
         .enter().append('g')
             .attr('class', 'group')
             .attr('fill', function(d) { return colorScale(d); });
 
-        // gRow.append('text').attr('class', 'title')
-	       //  .attr('dx', '-0.34em')
-	       //  .text(function(d) {return d.key});
+  
 
-         var bars = gRow.append('g').attr('class', 'bars');
+        var bars = gRow.append('g').attr('class', 'bars');
 
         bars.selectAll(".bar-underlying").data(function(d) {return d.values;})
         	.enter().append('rect')
@@ -157,6 +168,14 @@ $(document).ready(()=>{
 	            .attr('y', function(d) {return yStackScale(d.stackSumPercByLocPerH + d.pByLocPerH);})
 	            .attr('width', xScale.bandwidth())
 	            .attr('height', function(d) { return yStackScale(0) - yStackScale(d.pByLocPerH);})
+
+	    // create the legend
+		var legKeys = ['Scheduled', 'Hold - Temporary', 'Hold - Permanent'];
+		var colorArray = ['#27AE60','#F1C40F','#E74C3C'];
+	  	$('#legend').css('margin-left', margin.left);
+	 	 legKeys.forEach(function(legKey,i){
+	    $('#legend').append('<div class="swatch" style="background:' + colorArray[i] + '"></div>' + legKey);
+	 	 });
 
 
    
@@ -581,7 +600,132 @@ $(document).ready(()=>{
 	            .html(function(d) { return d.value; });
 	    
 	    return table;
-	}
+	};
+
+		function updateData(start,end){
+		// Get the data again
+		d3.json('/api/Readings', function(error,data){
+			console.log(data);
+			var dataInRange = data.filter(function(d){
+				return Date.parse(d.created) > Date.parse(start) && Date.parse(d.created) < Date.parse(end)
+			});
+			var holdsOnly = dataInRange.filter(function(d){
+				return d.systemSwitchPos != 2 && d.statusHeat > 0;
+			})
+			var dataFormated = formatJSON(dataInRange);
+			var dataByHours = nestedHours(dataFormated);
+			var locationTimeSums =totalTimeByLocation(dataByHours);
+			console.log(locationTimeSums)
+			var dataByHoursPercents = percentValues(dataByHours);
+
+
+			var startingTimeStamp = Date.parse(start);
+			var endingTimeStamp = Date.parse(end);
+			if(startingTimeStamp < dataFormated[0].dateTimeInfo.timeStamp){
+				startingTimeStamp = dataFormated[0].dateTimeInfo.timeStamp
+			}
+			if(endingTimeStamp > dataFormated[dataFormated.length-1].endTimeInfo.timeStamp){
+				endingTimeStamp = dataFormated[dataFormated.length-1].endTimeInfo.timeStamp
+			}
+			console.log(endingTimeStamp-startingTimeStamp)
+			var totalMilliseconds = endingTimeStamp-startingTimeStamp;
+
+			ySplitScale.domain([0,(endingTimeStamp-startingTimeStamp)])
+			
+			yStackScale.domain([0,1])
+			xScale.domain(['East Cobb', 'West Cobb', 'Roswell']);
+			settingRowScale.domain(['Off', 'Scheduled', 'Hold - Temporary', 'Hold - Permanent']);
+			storeHoursRowScale.domain(['Closed','Open']);
+			settingRowScale.range([0,storeHoursRowScale.bandwidth()]);
+
+			
+
+			 // Select the section we want to apply our changes to
+		    var svg = d3.select("#graph-container");
+
+		    // Data join
+		    var oRow = svg.selectAll('.o-row')
+		    	.data(dataByHoursPercents)
+	            
+	        oRow.exit().remove();
+	       	oRow.enter().append('g')
+	            .attr('class', 'hours-group')
+	        oRow.transition()
+				.duration(750)
+				.attr("transform", function(d) {  return "translate(0," + storeHoursRowScale(d.key) + ")"; });
+
+	       
+		    var gRow = svg.selectAll('.g-row')
+		    	.data(function(d) {return d.values;})
+
+		    gRow.exit().remove();
+	        gRow.enter().append('g')
+	            .attr('class', 'group')
+	            .attr('fill', function(d) { return colorScale(d); });
+	        gRow.transition()
+				.duration(750)
+
+	  
+
+	     	var barsUnderlying = svg.selectAll(".bar-underlying")
+	     		.data(function(d) {return d.values;})
+
+	     		barsUnderlying.exit().remove();
+	     		barsUnderlying.enter().append('rect')
+	        		.attr('class', 'bar bar-underlying')
+		           	.style('fill', '#fff');
+
+		        barsUnderlying.transition()
+		        	.duration(750)
+		        	.attr('x', function(d) {return xScale(d.key);})
+		            .attr('y', 0)
+		            .attr('width', xScale.bandwidth())
+		            .attr('height', function(d) { return yStackScale.range()[1];})
+
+
+
+
+	        var barsOverlying = svg.selectAll(".bar-overlying")
+	        	.data(function(d) {return d.values;})
+
+	        barsOverlying.exit().remove();
+	        barsOverlying.enter().append('rect')
+        		.attr('class', 'bar bar-overlying')
+	            
+		    barsOverlying.transition()
+		    	.duration(750)
+		    	.attr('x', function(d) {return xScale(d.key);})
+	            .attr('y', function(d) {return yStackScale(d.stackSumPercByLocPerH + d.pByLocPerH);})
+	            .attr('width', xScale.bandwidth())
+	            .attr('height', function(d) { return yStackScale(0) - yStackScale(d.pByLocPerH);})
+
+		    var rects = svg.selectAll('.rect')
+		    	.data(dataFormated);
+
+		   
+
+
+		    svg.select(".x.axis").transition()
+		    	.duration(750) // change the x axis
+		        .attr("transform", "translate(0," + height + ")")
+		        .call(xAxis)
+		        
+		    svg.select(".y.axis").transition() // change the y axis
+		        .duration(750)
+		        .call(yAxis)
+		        .selectAll("text")	
+	            .style("text-anchor", "middle")
+	            .attr("y", -10)
+	            .attr("dx", "5px")
+	            .attr("dy", "1px")
+	            .attr("transform", function(d) {
+	                return "rotate(-90)" 
+	                });
+
+       
+
+	    });
+	};
 
 
 
