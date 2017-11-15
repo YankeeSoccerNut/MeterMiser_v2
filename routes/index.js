@@ -3,6 +3,7 @@ var router = express.Router();
 
 var mysql = require('mysql');
 var config = require('../config/config');
+var secure_pass = require('../utility/securepass');
 
 var bcrypt = require('bcrypt-nodejs');
 
@@ -20,15 +21,15 @@ router.get('/', function(req, res, next) {
 });
 
 /* GET history page. */
-router.get('/history', function(req, res, next) {
+router.get('/history', secure_pass, function(req, res, next) {
   res.render('history');
 });
 
-router.get('/performance', function(req, res, next) {
+router.get('/performance', secure_pass, function(req, res, next) {
   res.render('stackable');
 });
 
-router.get('/activitylog', function(req,res,next) {
+router.get('/activitylog', secure_pass, function(req,res,next) {
 	res.render('activitylog');
 })
 
@@ -36,15 +37,15 @@ router.get('/sign-up', function(req, res, next) {
   res.render('sign-up');
 });
 
-router.get('/usersProfile', function(req, res, next) {
+router.get('/usersProfile', secure_pass, function(req, res, next) {
   res.render('usersProfile');
 });
 
-router.get('/account-main', function(req, res, next) {
+router.get('/account-main', secure_pass, function(req, res, next) {
   res.render('user-account');
 });
 
-router.get('/locations', function(req, res, next) {
+router.get('/locations', secure_pass, function(req, res, next) {
   res.render('locations');
 });
 

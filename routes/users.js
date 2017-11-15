@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var mysql = require('mysql');
 var config = require('../config/config');
+var secure_pass = require('../utility/securepass');
 
 var bcrypt = require('bcrypt-nodejs');
 
@@ -13,12 +14,12 @@ connection.connect((error)=>{
 	}
 })
 
-/* GET users listing. */
-router.get('/', (req,res,next)=>{
-	res.render('users',{});
-});
+// /* GET users listing. */
+// router.get('/', secure_pass, (req,res,next)=>{
+// 	res.render('users',{});
+// });
 
-router.get('/usersProfile', (req,res,next)=>{
+router.get('/usersProfile', secure_pass, (req,res,next)=>{
 	res.render('usersProfile',{});
 });
 
@@ -84,16 +85,9 @@ router.post('/sign-up-process',(req,res,next)=>{
 	}); // initial user query
 })//router.post('/sign-up-process'
 
-router.post('/validateProcess',(req,res,next)=>{
+router.post('/validateProcess', secure_pass, (req,res,next)=>{
 	res.send('posted validateProcess')
 }); //router.post('/validateProcess'
-
-
-
-
-
-
-
 
 
 module.exports = router;
