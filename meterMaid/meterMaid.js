@@ -8,18 +8,18 @@
 // these will be GLOBAL......
 config = require('../config/config');
 mysql = require('mysql');
+createActivity = require('../utility/createActivity');
+getHoneywellSessionId = require('../utility/getHoneywellSessionId');
 dbConnection = mysql.createConnection(config.db);
 
 // these are LOCAL.......
-var createActivity = require('../utility/createActivity');
-
 var sessionID = '';
 var pollResults = [];
 
 console.log("Start of processing....");
-getHoneywellSessionId()
+getHoneywellSessionId(config.honeywellUID, config.honeywellPass)
 .then((sessionID) => {
-  pollHoneywellUserData()
+  pollHoneywellUserData(sessionID)
   .then((pollResults) => {
     logoffHoneywell();
     dbConnection.connect();
@@ -312,66 +312,8 @@ function checkLocationHours(site){
   return(dbPromise);
 }; // checkLocationHours
 
-function getHoneywellSessionId(){
-// Get user id and password.....// TODO: encrypt/decrypt for security
-var fsIdPass = require('fs');
-var idPassRecord = '';
 
-// Use synchronous read as we really can't do anything else until we have the userId and password....TODO:  this needs to come from the DB eventually
-// idPassRecord = fsIdPass.readFileSync('../myThermostats.txt', 'utf8');
-//
-// var userIdPass = idPassRecord.split("|");
-// var trimmedUserPass = userIdPass[1].trim();
-
-// Now format then make the request for a sessionId....using curl
-// alternate version had to format this way to avoid having OS interpret the & as 'run in background'
-var curlRequest = `curl -s -k -X 'POST' -H 'Content-Type: application/x-www-form-urlencoded' -H 'User-Agent: Apache-HttpClient/UNAVAILABLE (java 1.4)' \
-'https://tccna.honeywell.com/ws/MobileV2.asmx/AuthenticateUserLogin' \
--d applicationID=a0c7a795-ff44-4bcd-9a99-420fac57ff04 \
--d ApplicationVersion=2 \
--d Username=${config.honeywellUID} \
--d UiLanguage=English \
--d Password=${config.honeywellPass}
-`;
-
-// need to ask the OS to exec the curl command for us...
-var util = require('util');
-var exec = require('child_process').exec;
-var parseString = require('xml2js').parseString;
-
-var command = curlRequest;
-var xmlResponse = "";
-
-//stdout is the response from the OS.  In this case it will be XML.
-  sessionPromise = new Promise (function(resolve, reject) {
-    child = exec(command, function(error, xmlResponse, stderr){
-      // console.log("AuthenticateUserLogin...")
-      // console.log('stdout: ' + xmlResponse);
-      // console.log('stderr: ' + stderr);
-
-      if(error !== null) {
-        console.log('exec error: ' + error);
-        reject();
-      };
-
-      parseString(xmlResponse, function (error, result) {
-          // console.log("parsing");
-          // console.log(result);
-          // console.log(error);
-          sessionID = result.AuthenticateLoginResult.SessionID;
-          resolve(sessionID);
-      });
-      // console.log(`sessionID: ${sessionID}`);
-    });  // curl command
-  })
-  .catch((err) => {
-    return(err);
-  }); // new Promise
-
-  return(sessionPromise);
-};  // getHoneywellSessionId
-
-function pollHoneywellUserData() {
+function pollHoneywellUserData(sessionID) {
 
   // need to ask the OS to exec the curl command for us...
   var util = require('util');
