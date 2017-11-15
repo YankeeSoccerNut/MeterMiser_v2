@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var mysql = require('mysql');
-var config = require('../config');
+var config = require('../config/config');
 
 var bcrypt = require('bcrypt-nodejs');
 

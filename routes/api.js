@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 var request = require('request');
 var bcrypt = require('bcrypt-nodejs');
-var config = require('../config');
+var config = require('../config/config');
 var secure_pass = require('../utility/securepass');
 var getHoneywellSessionId = require('../utility/getHoneywellSessionId');
 
