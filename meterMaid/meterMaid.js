@@ -99,8 +99,9 @@ function saveReadingsProcess(site){
     var sT = site.ThermostatData;
     var sR = site.ThermostatReadingData;
 
-    var insertReadingsSQL = `INSERT INTO Readings (thermostatId,thermCreated,thermLocked,dispTemp,heatSetPoint,coolSetPoint,displayUnits,statusHeat,statusCool,heatLowerSetPt,heatUpperSetPt,coolLowerSetPt,coolUpperSetPt,schedHeatSp,schedCoolSp,systemSwitchPos,equipmentStatus,fanPosition,fanRunning,weatherIsDefined,weatherIsValid,weatherTemp,weatherTempUnit,weatherCondition,operatingHoursFlag,thermCreatedDay, thermCreatedHour, thermCreatedMin)  VALUES (${sT.ThermostatID}, "${sR.Created}", ${sR.thermLocked}, ${sR.DispTemperature}, ${sR.HeatSetpoint}, ${sR.CoolSetpoint},"${sR.DisplayedUnits}", ${sR.StatusHeat}, ${sR.StatusCool}, ${sR.HeatLowerSetptLimit}, ${sR.HeatUpperSetptLimit}, ${sR.CoolLowerSetptLimit}, ${sR.CoolUpperSetptLimit}, ${sR.SchedHeatSp},${sR.SchedCoolSp},
-    ${sR.SystemSwitchPosition}, "${sT.EquipmentStatus}", "${sT.Fan[0].Position}", ${sR.fanRunning}, ${sR.weatherIsDefined}, ${sR.weatherIsValid}, ${sL.CurrentWeather[0].Temperature}, "${sL.CurrentWeather[0].TempUnit}", "${sL.CurrentWeather[0].Condition}", ${sR.isOpenDuringPoll}, ${sR.thermCreatedDay}, ${sR.thermCreatedHour}, ${sR.thermCreatedMin});`;
+    var insertReadingsSQL = `INSERT INTO Readings (thermostatId,thermCreated,thermLocked,dispTemp,heatSetPoint,coolSetPoint,displayUnits,statusHeat,statusCool,heatLowerSetPt,heatUpperSetPt,coolLowerSetPt,coolUpperSetPt,schedHeatSp,schedCoolSp,systemSwitchPos,equipmentStatus,fanPosition,fanRunning,weatherIsDefined,weatherIsValid,weatherTemp,weatherTempUnit,weatherCondition,operatingHoursFlag,thermCreatedDay, thermCreatedHour, thermCreatedMin, triggerId)  VALUES (${sT.ThermostatID}, "${sR.Created}", ${sR.thermLocked}, ${sR.DispTemperature}, ${sR.HeatSetpoint}, ${sR.CoolSetpoint},"${sR.DisplayedUnits}", ${sR.StatusHeat}, ${sR.StatusCool}, ${sR.HeatLowerSetptLimit}, ${sR.HeatUpperSetptLimit}, ${sR.CoolLowerSetptLimit}, ${sR.CoolUpperSetptLimit}, ${sR.SchedHeatSp},${sR.SchedCoolSp},
+    ${sR.SystemSwitchPosition}, "${sT.EquipmentStatus}", "${sT.Fan[0].Position}", ${sR.fanRunning}, ${sR.weatherIsDefined}, ${sR.weatherIsValid}, ${sL.CurrentWeather[0].Temperature}, "${sL.CurrentWeather[0].TempUnit}", "${sL.CurrentWeather[0].Condition}",
+    ${sR.isOpenDuringPoll}, ${sR.thermCreatedDay}, ${sR.thermCreatedHour}, ${sR.thermCreatedMin}, ${sR.triggerId});`;
 
     dbConnection.query(insertReadingsSQL, function (err, result) {
       if (err){
@@ -168,6 +169,7 @@ function createLostConnectionActivity(site, count){
   // Use a utility function here to insert into the ActivityLog table....
   activityObj.locationId = site.LocationData.LocationID;
   activityObj.triggerId = 2; // LostConnection
+  site.ThermostatReadingData.triggerId = activityObj.triggerId;
   activityObj.message = `From meterMaid:  Lost connection? No change in  ${count} polls`;
 
   var dbPromise = createActivity(dbConnection, activityObj);  // createActivity returns a promise
@@ -231,6 +233,7 @@ function createLocationHoursActivity(site){
   // Use a utility function here to insert into the ActivityLog table....
   activityObj.locationId = site.LocationData.LocationID;
   activityObj.triggerId = 1; // NoLocationHours
+  site.ThermostatReadingData.triggerId = activityObj.triggerId;
   activityObj.message = 'From meterMaid:  No locationHours';
 
   var dbPromise = createActivity(dbConnection, activityObj);  // createActivity returns a promise
