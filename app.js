@@ -5,7 +5,7 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var session = require('express-session');  // we added
-var config = require('./config'); // we added
+var config = require('./config/config'); // we added
 
 var sessionOptions = {
   secret: config.sessionSalt,
