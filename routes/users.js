@@ -62,6 +62,7 @@ router.post('/sign-up-process',(req,res,next)=>{
 					}else{
 
 						console.log('User signed up successfully!');
+						req.session.loggedIn = true;
 						req.session.email = email
 						resolve(true);
 					}; // if on query

@@ -55,7 +55,7 @@ router.post('/loginProcess',(req,res,next)=>{
   var email = req.body.email;
   var password = req.body.password; // English version from user
   // write a query to check if the user is the DB
-  var selectQuery = `SELECT * FROM users WHERE email = ?;`;
+  var selectQuery = `SELECT * FROM Users WHERE email = ?;`;
   connection.query(selectQuery,[email],(err,results)=>{
       if(err){
           console.log(err);
