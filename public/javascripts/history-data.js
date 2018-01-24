@@ -10,7 +10,7 @@ $(document).ready(()=>{
 
         function cb(start, end) {
             $('#reportrange span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
-            
+
         }
 
         $('#reportrange').daterangepicker({
@@ -27,13 +27,13 @@ $(document).ready(()=>{
         }, cb);
         $('#reportrange').on('apply.daterangepicker',(ev, picker)=>{
         	updateData(picker.startDate,picker.endDate);
-        	
+
         });
 
         cb(start, end);
-        
+
     })
-  
+
 
 	// Set the dimensions of the canvas / graph
 	var margin = {top: 10, right: 20, bottom: 40, left: 30};
@@ -48,7 +48,7 @@ $(document).ready(()=>{
 	        .attr("transform",
 	              "translate(" + margin.left + "," + margin.top + ")");
 
-	
+
 	// Set the ranges
 	var x = d3.scaleTime().range([0, width]);
 	var y = d3.scaleBand().range([0, height]).paddingInner(0.1).paddingOuter(0.1);
@@ -59,7 +59,7 @@ $(document).ready(()=>{
 
 	// Get the data
 	d3.json('/api/Readings', function(error,data){
-		console.log(data);
+		console.log('result from /api/Readings: \n', data);
 		var dataFormated = formatJSON(data);
 		console.log(dataFormated);
 
@@ -103,12 +103,12 @@ $(document).ready(()=>{
         .attr("class", "x axis")
         .attr("transform", "translate(0," + height + ")")
         .call(xAxis)
-          .selectAll("text")	
+          .selectAll("text")
             .style("text-anchor", "end")
             .attr("dx", "-.8em")
             .attr("dy", ".15em")
             .attr("transform", function(d) {
-                return "rotate(-60)" 
+                return "rotate(-60)"
                 });
 
 
@@ -116,13 +116,13 @@ $(document).ready(()=>{
 	svg.append("g")
 	    .attr("class", "y axis")
 	    .call(yAxis)
-	    .selectAll("text")	
+	    .selectAll("text")
             .style("text-anchor", "middle")
             .attr("y", -10)
             .attr("dx", "5px")
             .attr("dy", "1px")
             .attr("transform", function(d) {
-                return "rotate(-90)" 
+                return "rotate(-90)"
                 });
 
 
@@ -131,7 +131,7 @@ $(document).ready(()=>{
     $('#history-table').dataTable();
 	});
 
-	
+
 	// create the legend
 	var legKeys = ['Scheduled', 'Hold - Temporary', 'Hold - Permanent'];
 	var colorArray = ['#27AE60','#F1C40F','#E74C3C'];
@@ -140,7 +140,7 @@ $(document).ready(()=>{
     $('#legend').append('<div class="swatch" style="background:' + colorArray[i] + '"></div>' + legKey);
  	 });
 
-	
+
 
 	// The table generation function
 	function tabulate(data, columns) {
@@ -208,16 +208,18 @@ $(document).ready(()=>{
 	        .append("td")
 	        .attr("style", "color: black") // sets the font style
 	            .html(function(d) { return d.value; });
-	    
+
 	    return table;
 	}
 
-	
 
-	 
+
+
 
 
 	function formatJSON(rawData){
+		console.log("formatJSON(rawData)\n:", rawData);
+
 		var dataFormated = []
 		rawData.forEach(function(d,i){
 			dataFormated[i] = {};
@@ -239,16 +241,16 @@ $(document).ready(()=>{
 			// 			return o.location == dataFormated[i].location
 			// 		}, i-1);
 			// 	// eliminate time gaps
-				
-				
-				
+
+
+
 					dataFormated[i-3].endTimeInfo = new DateTime(d.created);
 					if(i>=rawData.length - 3){
 						dataFormated[i].endTimeInfo =new DateTime(Date.now());
 					}
 
 				}
-				
+
 
 
 			// 	//lost connection
@@ -281,8 +283,9 @@ $(document).ready(()=>{
 			// 	// 	return bySearch
 			// 	// }
 			// }
-			
+
 		})
+		console.log("dataFormated: \n", dataFormated);
 		return dataFormated;
 	}
 
@@ -356,7 +359,7 @@ $(document).ready(()=>{
 		d3.select("#table-container").select("#history-table_wrapper").remove();
 		// Get the data again
 		d3.json('/api/Readings', function(error,data){
-			console.log(data);
+			console.log('result from /api/Readings: \n', data);
 			var dataFormated = formatJSON(data);
 			console.log(dataFormated);
 
@@ -398,23 +401,23 @@ $(document).ready(()=>{
 		    svg.select(".x.axis").transition()
 		    	.duration(750) // change the x axis
 		        .call(xAxis)
-		         .selectAll("text")	
+		         .selectAll("text")
 	            .style("text-anchor", "end")
 	            .attr("dx", "-.8em")
 	            .attr("dy", ".15em")
 	            .attr("transform", function(d) {
-	                return "rotate(-60)" 
+	                return "rotate(-60)"
 	                });
 		    svg.select(".y.axis").transition() // change the y axis
 		        .duration(750)
 		        .call(yAxis)
-		        .selectAll("text")	
+		        .selectAll("text")
 	            .style("text-anchor", "middle")
 	            .attr("y", -10)
 	            .attr("dx", "5px")
 	            .attr("dy", "1px")
 	            .attr("transform", function(d) {
-	                return "rotate(-90)" 
+	                return "rotate(-90)"
 	                });
 
              //render the table

@@ -6,38 +6,34 @@ Small business owners that operate retail storefronts have a lot to do every day
 What if there were a way to intelligently monitor and alert the small business owner when there are opportunities to adjust the thermostat and generate cost savings?
 
 
-**Concept:**
+**Features:**
 * Automated and periodic polling of wi-fi enabled thermostats in each location
 * Persistent storage of collected data for analysis and actionable insights
+* SMS alerts via Twilio when savings opportunities are identified
 * Mobile first design to leverage the small business owners most powerful tool -- the smart phone
 * Dynamic and interactive charts to quickly identify trends and compare locations
-* Ability to take action (adjust/turn off) on the thermostat
 
-##Github Link:
-[MeterMiser]()
 
-##Team Members & Roles:
-**Click on each member's name to see their GitHub profile**
+## Github Link: [MeterMiser](https://github.com/YankeeSoccerNut/MeterMiser)
+
+## Team Members & Roles:
+*Click on each member's name to see their GitHub profile*
+
 All team members are students in the [Digital Crafts](https://digitalcrafts.com) September 2017 cohort. This first project applied agile principles to get a MVP completed in a relatively short timeframe.
 
-##The Team
-* [Scott Anderson](https://https://github.com/YankeeSoccerNut/)  
-**Primary team role:** blah blah <br />
-**Contributions:**  blah blah<br />
-**Key code portions:** All the backend polling, data capture, and API for client GET requests.  Google maps integration with dynamic zoom based on marker boundaries.
 
-* [Mikayla Kelhofer](https://github.com/mkelhofer/)  
-**Primary team role:** blah blah<br />
-**Contributions:** blah blah <br />
-**Key code portions:** Data analysis, d3.js charting, dynamic timeline filtering.
+* [Scott Anderson](https://https://github.com/YankeeSoccerNut/)
+Product Owner and Backend Developer <br/>
+**Key contributions:** All the backend polling, data capture, and API for client GET requests.  Google maps integration with dynamic zoom based on marker boundaries.  All integration with Twilio.
 
-* [Michael McFarland](https://github.com/mcfarland422)  
-**Primary team role:** Front-End Development and User Interface<br />
-**Contributions:** Built custom HTML layout using Bootstrap framework and created custom CSS styling for all aspects of application. Scheduled daily meetings and worked alongside with Scrum team on application from concept to completion. Developed visual and UI aspects of MeterMiser.<br />
-**Key code portions:** All of the HTML and CSS.  Overall style and flow.
+* [Mikayla Kelhofer](https://github.com/mkelhofer/) Primary Data Analyst and Data Visualizations<br />
+**Key contributions:** Data analysis, d3.js charting, dynamic timeline filtering.
 
+* [Michael McFarland](https://github.com/mcfarland422)
+Front-End Development and User Interface<br />
+**Key contributions:** Overall look and feel of the application.  Custom HTML layout using Bootstrap and custom CSS for all aspects of application.
 
-##What we used:
+## Tools and Technologies
 **Languages:**
 * Node
 * JavaScript
@@ -50,30 +46,29 @@ All team members are students in the [Digital Crafts](https://digitalcrafts.com)
 * d3.js
 
 **API's**
-* Google Maps
-* Honeywell "red link"
-  * [MobileV2](https://tccna.honeywell.com/ws/MobileV2.asmx)
+* [Google Maps](https://developers.google.com/maps/documentation/) for mapping thermostat locations
+* Honeywell "red link":  [MobileV2](https://tccna.honeywell.com/ws/MobileV2.asmx) to support thermostat polling
+* [Twilio](https://www.twilio.com/docs/api) to enable outbound and inbound text messaging
 
-**Other:**  
-* 1
-* 2
-* 3
-* 4
-* 5
+**Other:**
+* mySQL
+* Sequel Pro as our GUI for mySQL administration
+* [nGrok](https://ngrok.com/) helped us with testing as a team and with integration to Twilio
+* AWS EC2 to host the polling server (meterMaid), activityEngine, and Express site
 
 
-##MVP (Minimum Viable Product):
+## MVP (Minimum Viable Product):
 
 * List locations for user
 * Map locations on google map
 * Provide historical view
 * Provide current, realtime snapshot of thermostat settings
 * Identify opportunities for cost savings
-
-**Stretch Goals**
-* Sign up and authentication
 * Push notifications of savings opportunities
-* SMS-based interactions
+
+#### Stretch Goals
+* Sign up and authentication
+* SMS-based, chatbot-like interactions
 
 ## Challenges & Solutions:
 **Some of the biggest challenges we faced with this project build included:**
@@ -82,44 +77,18 @@ All team members are students in the [Digital Crafts](https://digitalcrafts.com)
 
     **Solution:**  We had some team member experiences with relational databases and SQL but not with any particular backend technologies.  After consultation with the DigitalCrafts instructor, we chose Express as the "front-end" to our back-end services.  This choice enabled us to leverage javascript and have a working solution up quickly.  The fact that the API responds with JSON makes it very easy to consume these services from our front-end client.
 
-
-2.  **Challenge:**   Front-End:
+2.  **Challenge:**   Front-End Styling<br>
     We ran into a few issues regarding elements of bootstrap not working correctly. Toggles would not toggle, drop down menus did not function properly, and CDNs were not responding as anticipated.
 
-    **Solution:**
+    **Solution:** These issues were resolved by time searching the internet and developer communities such as Stackoverflow.com, and talking with our instructor.
 
-    These issues were resolved by spending hours upon hours searching the internet and developer communities such as Stackoverflow.com, and talking with our instructor Rob.  we found solutions to all of
-    the front-end issues by using these methods and was successfully able to implement them into our application.
+3.  **Challenge: **  Data Analysis and Visualization <br>
+    D3.JS is a challenging library to learn.  We ran into some early obstacles related to some significant changes between v3 and v4 of the library.
 
-3.  **Challenge:**  
+    **Solution:**  Stackoverflow, Google and our instructor helped us overcome the initial obstacles in time to meet our "ship" date for the project.
 
-    **Solution:**
-
-
-##Code Snippets
-
-<!-- Insert code here -->
-We created a front-end service to access the API we built on the back-end.  
-
-```JavaScript
-//App Service for accessing the API
-A large portion of the front-end work was c
-```
 
 ## Screenshots:
-![Homepage](static/img/screenshots/splash_page.png)
-![Search for Destination](static/img/screenshots/search_view.png)
-![Search Result 1](static/img/screenshots/search_result_chipotle.png)
-![Search Result 2](static/img/screenshots/search_result_D1.png)
-![Navigation View](static/img/screenshots/nav_view_chipotle.png)
-![Navigation - Origin](static/img/screenshots/nav_view_origin.png)
-![Navigation - Destination](static/img/screenshots/nav_view_destination.png)
-![Example of Ionic Build in Emulation (Android/Iphone)](static/img/ionic_ss.png)
-<!-- ![iPhone6](static/img/iphone6.png)
-![iPad](static/img/ipad.png)
-![Android](static/img/android.png) -->
-
-
-##Project History
-10/24/2017 - Demo MVP  
-10/17/2017 - Project Start  
+![Locations](/public/images/LocationsScreenShot.png)
+![History](/public/images/HistoryScreenShot.png)
+![SMS Alert](/public/images/resizedVerticalTwilio.png)
